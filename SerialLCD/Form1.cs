@@ -33,7 +33,7 @@ namespace SerialLCD
 
     public partial class Form1 : KryptonForm
     {
-        const int scale = 10;
+        const int scale = 16;
         const int GREEN = 0x07E0;
 
         const byte NONE  = 0;
@@ -69,7 +69,14 @@ namespace SerialLCD
         public Form1()
         {
             InitializeComponent();
+
             pictureBox1.Image = newBmp;
+
+            pictureBox1.Size = new Size(128 * scale, 64 * scale);
+
+            this.Width = 128 * scale + panel2.Width + 32;
+            
+
 
             Proceso1 = new Thread(new ThreadStart(render));
             Proceso1.Priority = ThreadPriority.Highest;
@@ -80,6 +87,10 @@ namespace SerialLCD
         }
         private void Form1_Shown(object sender, EventArgs e)
         {
+
+
+
+
             // Получить список COM портов 
             string[] ports = SerialPort.GetPortNames();
 
@@ -520,6 +531,21 @@ namespace SerialLCD
 
         }
 
+        private void kryptonCheckSet1_CheckedButtonChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+           
+        }
+
+        private void label1_Click(object sender, EventArgs e)
+        {
+
+        }
+
 
 
         #endregion
@@ -528,6 +554,7 @@ namespace SerialLCD
         byte[] serial_transmit_buffer = new byte[1024];
         public void render()
         {
+            FastBitmap output = new FastBitmap(newBmp);
             int i = 0;
             while (true)
             {
@@ -537,7 +564,7 @@ namespace SerialLCD
                     ushort pix;
 
                     Color newColor;
-                    FastBitmap output = new FastBitmap(newBmp);
+                    
 
                     for (x = 0; x < LCD_W; x++) fbMeasure[x, window_H] = 0xF81F;
                     for (y = 0; y < LCD_H; y++) fbMeasure[window_W, y] = 0xF81F;
@@ -602,7 +629,7 @@ namespace SerialLCD
                     catch (Exception ex)
                     {
                         Application.Exit();
-                        //MessageBox.Show("Ошибка: " + ex);
+                        MessageBox.Show("Ошибка: " + ex);
                     }
                 
                     Thread.Sleep(1);           
