@@ -1,0 +1,6 @@
+Iocomp.Instrumentation.Professional.Panel, Iocomp.Instrumentation.WF40.Pro, Version=5.0.4.9044, Culture=neutral, PublicKeyToken=a217a64fde564c89
+Bunifu.UI.WinForms.BunifuButton.BunifuButton, Bunifu.UI.WinForms.BunifuButton, Version=4.1.1.0, Culture=neutral, PublicKeyToken=e8e24ccd28363fe9
+Iocomp.Instrumentation.Standard.EditInteger, Iocomp.Instrumentation.WF40.Std, Version=5.0.4.9044, Culture=neutral, PublicKeyToken=a217a64fde564c89
+Iocomp.Instrumentation.Standard.Led, Iocomp.Instrumentation.WF40.Std, Version=5.0.4.9044, Culture=neutral, PublicKeyToken=a217a64fde564c89
+Iocomp.Instrumentation.Standard.Label, Iocomp.Instrumentation.WF40.Std, Version=5.0.4.9044, Culture=neutral, PublicKeyToken=a217a64fde564c89
+Iocomp.Instrumentation.Professional.MatrixButtons, Iocomp.Instrumentation.WF40.Pro, Version=5.0.4.9044, Culture=neutral, PublicKeyToken=a217a64fde564c89
