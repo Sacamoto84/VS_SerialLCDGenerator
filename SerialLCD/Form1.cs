@@ -15,8 +15,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
+
+
 namespace SerialLCD
 {
+
+
 
     public struct _contur
     {
@@ -32,7 +36,14 @@ namespace SerialLCD
     }
 
     public partial class Form1 : KryptonForm
+
+
     {
+
+        private Task Proceso1;
+        private Task tSendToSTM32;
+
+
         const int scale = 10;
         const int GREEN = 0x07E0;
 
@@ -45,9 +56,9 @@ namespace SerialLCD
         public ushort[,] frameBufferLayer_Mouse_Cursor = new ushort[128, 64];
         public ushort[,] fbMeasure = new ushort[128, 64]; //Рамка
 
-   
+
         public ushort[,] fbMain = new ushort[128, 64];
-      
+
 
         public ushort[,] frameBufferRender = new ushort[128, 64];
 
@@ -65,8 +76,8 @@ namespace SerialLCD
 
         int window_H = 16, window_W = 16, window_Visible = 0;
 
-        Thread Proceso1;
-        Thread tSendToSTM32;
+        //Thread Proceso1;
+        //Thread tSendToSTM32;
 
         private CancellationTokenSource cts = new CancellationTokenSource();
 
@@ -86,14 +97,18 @@ namespace SerialLCD
 
 
             // Start threads with cancellation token
-            Proceso1 = new Thread(() => Render(cts.Token));
-            Proceso1.Priority = ThreadPriority.Highest;
-            Proceso1.IsBackground = true; // Mark as background thread
-            Proceso1.Start();
+            //Proceso1 = new Thread(() => Render(cts.Token));
+            //Proceso1.Priority = ThreadPriority.Highest;
+            //Proceso1.IsBackground = true; // Mark as background thread
+            //Proceso1.Start();
 
-            tSendToSTM32 = new Thread(() => SendToSTM32(cts.Token));
-            tSendToSTM32.IsBackground = true; // Mark as background thread
-            tSendToSTM32.Start();
+            //tSendToSTM32 = new Thread(() => SendToSTM32(cts.Token));
+            //tSendToSTM32.IsBackground = true; // Mark as background thread
+            //tSendToSTM32.Start();
+
+            Proceso1 = Task.Run(() => RenderAsync(cts.Token), cts.Token);
+            tSendToSTM32 = Task.Run(() => SendToSTM32Async(cts.Token), cts.Token);
+
         }
         private void Form1_Shown(object sender, EventArgs e)
         {
@@ -111,41 +126,32 @@ namespace SerialLCD
 
             if (listBox1.Items.Count > 0) listBox1.SetSelected(0, true);
         }
-        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        private async void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
+
+            cts.Cancel();
+            if (serialPort1.IsOpen)
             {
-                // Signal threads to stop
-                cts.Cancel();
-
-                // Close serial port
-                if (serialPort1.IsOpen)
-                {
-                    try
-                    {
-                        serialPort1.Close();
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show($"Ошибка при закрытии порта: {ex.Message}");
-                    }
-                }
-
-                // Wait for threads to terminate (optional, since they are background threads)
                 try
                 {
-                    Proceso1.Join(1000); // Wait up to 1 second
-                    tSendToSTM32.Join(1000);
+                    serialPort1.Close();
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Ошибка при завершении потоков: {ex.Message}");
+                    MessageBox.Show($"Ошибка при закрытии порта: {ex.Message}");
                 }
-
-                // Dispose of CancellationTokenSource
-                cts.Dispose();
-                newBmp.Dispose(); // Освобождаем Bitmap
-                newBmpMini.Dispose();
             }
+            try
+            {
+                await Task.WhenAll(Proceso1, tSendToSTM32);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка при завершении задач: {ex.Message}");
+            }
+            cts.Dispose();
+            newBmp.Dispose();
+            newBmpMini.Dispose();
         }
 
         private void OPEN_Click(object sender, EventArgs e)
@@ -180,7 +186,7 @@ namespace SerialLCD
         #endregion
 
         #region Утилиты setArray
-       
+
         public void LineH(ushort[,] array, short y, short x, short w, ushort color)
         {
             for (ushort i = 0; i < w; i++)
@@ -551,94 +557,189 @@ namespace SerialLCD
         #region Потоки отрисовки и отсылки
         byte[] serial_transmit_buffer = new byte[1024];
 
-        public void Render(CancellationToken token)
+        //public void Render(CancellationToken token)
+        //{
+        //    int i = 0;
+        //    Bitmap newBmpLocal = new Bitmap(128 * scale, 64 * scale);
+        //    Graphics graphics = Graphics.FromImage(newBmpLocal); // Создаём Graphics один раз
+        //    Graphics graphicsTarget = Graphics.FromImage(newBmp); // Graphics для глобального Bitmap
+        //    Stopwatch stopwatch = new Stopwatch(); // Для измерения времени
+        //    SolidBrush brush = new SolidBrush(Color.Black);
+
+        //    while (!token.IsCancellationRequested)
+        //    {
+        //        stopwatch.Start(); // Начало измерения времени
+
+        //        i++;
+        //        ushort x, y;
+        //        ushort pix;
+
+        //        // Обновление буфера рендера
+        //        for (x = 0; x < LCD_W; x++) fbMeasure[x, window_H] = 0xF81F;
+        //        for (y = 0; y < LCD_H; y++) fbMeasure[window_W, y] = 0xF81F;
+        //        for (x = 0; x < LCD_W; x++)
+
+        //            for (y = 0; y < LCD_H; y++)
+        //            {
+        //                frameBufferRender[x, y] = fbMain[x, y];
+        //                // Рамка окна
+        //                if (window_Visible == 1) frameBufferRender[x, y] |= fbMeasure[x, y];
+        //                // Контур для выделения
+        //                if (contur.enable)
+        //                {
+        //                    if (frameBufferLayer_Contur[x, y] == GREEN)
+        //                    {
+        //                        if (frameBufferRender[x, y] == 0) frameBufferRender[x, y] = 0x654C;
+        //                        else
+        //                            frameBufferRender[x, y] = 0x8F51; // Показать если выбран режим
+        //                    }
+        //                }
+        //                if (frameBufferLayer_Mouse_Cursor[x, y] > 0)
+        //                    frameBufferRender[x, y] = frameBufferLayer_Mouse_Cursor[x, y];
+        //            }
+
+        //        try
+        //        {                  
+        //            // Очистка изображения
+        //            graphics.Clear(Color.Black);
+        //            // Рисование квадратов
+        //            for (x = 0; x < LCD_W; x++)
+        //                for (y = 0; y < LCD_H; y++)
+        //                {
+        //                    pix = frameBufferRender[x, y];
+        //                    int r = (((pix & 0xF800) >> 11) << 3);
+        //                    int g = (((pix & 0x07E0) >> 5) << 2);
+        //                    int b = ((pix & 0x001F) << 3);
+
+        //                    brush.Color = Color.FromArgb(r, g, b);
+        //                    int scaledX = x * scale;
+        //                    int scaledY = y * scale;
+        //                    graphics.FillRectangle(brush, scaledX, scaledY, scale, scale);
+
+        //                }
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            MessageBox.Show("Ошибка при обработке изображения: " + ex.Message);
+        //            break;
+        //        }
+
+        //        // Копирование newBmpLocal в newBmp
+        //        try
+        //        {
+        //            graphicsTarget.DrawImage(newBmpLocal, 0, 0, 128 * scale, 64 * scale);
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            MessageBox.Show("Ошибка при копировании изображения: " + ex.Message);
+        //            break;
+        //        }
+
+        //        stopwatch.Stop(); // Окончание измерения времени
+        //        long renderTimeMs = stopwatch.ElapsedMilliseconds; // Время рендера в миллисекундах
+        //        stopwatch.Reset(); // Сброс для следующего измерения
+
+        //        // Обновление UI
+        //        if (!this.IsDisposed && this.IsHandleCreated)
+        //        {
+        //            try
+        //            {
+        //                this.Invoke((MethodInvoker)delegate
+        //                {
+        //                    label1.Text = $"{i},{renderTimeMs}ms";
+        //                    pictureBox1?.Refresh();
+        //                });
+        //            }
+        //            catch (Exception ex)
+        //            {
+        //                MessageBox.Show("Ошибка при обновлении UI: " + ex.Message);
+        //                break;
+        //            }
+        //        }
+
+        //        long delay = 16 - renderTimeMs;
+        //        if (delay < 0) delay = 1;
+
+        //        Thread.Sleep((int)delay);
+        //    }
+
+
+        //    // Clean up resources
+        //    graphics.Dispose();
+        //    graphicsTarget.Dispose();
+        //    newBmpLocal.Dispose();
+        //    brush.Dispose
+        //}
+
+        private async Task RenderAsync(CancellationToken token)
         {
             int i = 0;
-            Bitmap newBmpLocal = new Bitmap(128 * scale, 64 * scale);
-            Graphics graphics = Graphics.FromImage(newBmpLocal); // Создаём Graphics один раз
-            Graphics graphicsTarget = Graphics.FromImage(newBmp); // Graphics для глобального Bitmap
-            Stopwatch stopwatch = new Stopwatch(); // Для измерения времени
-            SolidBrush brush = new SolidBrush(Color.Black);
+            using Bitmap newBmpLocal = new Bitmap(128 * scale, 64 * scale);
+            using Graphics graphics = Graphics.FromImage(newBmpLocal);
+            using Graphics graphicsTarget = Graphics.FromImage(newBmp);
+            using SolidBrush brush = new SolidBrush(Color.Black);
+            Stopwatch stopwatch = new Stopwatch();
 
             while (!token.IsCancellationRequested)
             {
-                stopwatch.Start(); // Начало измерения времени
-
+                stopwatch.Start();
                 i++;
                 ushort x, y;
                 ushort pix;
-
-                // Обновление буфера рендера
                 for (x = 0; x < LCD_W; x++) fbMeasure[x, window_H] = 0xF81F;
                 for (y = 0; y < LCD_H; y++) fbMeasure[window_W, y] = 0xF81F;
                 for (x = 0; x < LCD_W; x++)
-
                     for (y = 0; y < LCD_H; y++)
                     {
                         frameBufferRender[x, y] = fbMain[x, y];
-                        // Рамка окна
                         if (window_Visible == 1) frameBufferRender[x, y] |= fbMeasure[x, y];
-                        // Контур для выделения
                         if (contur.enable)
                         {
                             if (frameBufferLayer_Contur[x, y] == GREEN)
                             {
                                 if (frameBufferRender[x, y] == 0) frameBufferRender[x, y] = 0x654C;
-                                else
-                                    frameBufferRender[x, y] = 0x8F51; // Показать если выбран режим
+                                else frameBufferRender[x, y] = 0x8F51;
                             }
                         }
                         if (frameBufferLayer_Mouse_Cursor[x, y] > 0)
                             frameBufferRender[x, y] = frameBufferLayer_Mouse_Cursor[x, y];
                     }
-
                 try
-                {                  
-                    // Очистка изображения
+                {
                     graphics.Clear(Color.Black);
-                    // Рисование квадратов
                     for (x = 0; x < LCD_W; x++)
                         for (y = 0; y < LCD_H; y++)
                         {
                             pix = frameBufferRender[x, y];
-                            int r = (((pix & 0xF800) >> 11) << 3);
-                            int g = (((pix & 0x07E0) >> 5) << 2);
-                            int b = ((pix & 0x001F) << 3);
-
+                            int r = ((pix & 0xF800) >> 11) << 3;
+                            int g = ((pix & 0x07E0) >> 5) << 2;
+                            int b = (pix & 0x001F) << 3;
                             brush.Color = Color.FromArgb(r, g, b);
-                            int scaledX = x * scale;
-                            int scaledY = y * scale;
-                            graphics.FillRectangle(brush, scaledX, scaledY, scale, scale);
-                         
+                            graphics.FillRectangle(brush, x * scale, y * scale, scale, scale);
                         }
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Ошибка при обработке изображения: " + ex.Message);
+                    MessageBox.Show($"Ошибка при обработке изображения: {ex.Message}");
                     break;
                 }
-
-                // Копирование newBmpLocal в newBmp
                 try
                 {
                     graphicsTarget.DrawImage(newBmpLocal, 0, 0, 128 * scale, 64 * scale);
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Ошибка при копировании изображения: " + ex.Message);
+                    MessageBox.Show($"Ошибка при копировании изображения: {ex.Message}");
                     break;
                 }
-
-                stopwatch.Stop(); // Окончание измерения времени
-                long renderTimeMs = stopwatch.ElapsedMilliseconds; // Время рендера в миллисекундах
-                stopwatch.Reset(); // Сброс для следующего измерения
-
-                // Обновление UI
-                if (!this.IsDisposed && this.IsHandleCreated)
+                stopwatch.Stop();
+                long renderTimeMs = stopwatch.ElapsedMilliseconds;
+                stopwatch.Reset();
+                if (!IsDisposed && IsHandleCreated)
                 {
                     try
                     {
-                        this.Invoke((MethodInvoker)delegate
+                        Invoke((MethodInvoker)delegate
                         {
                             label1.Text = $"{i},{renderTimeMs}ms";
                             pictureBox1?.Refresh();
@@ -646,32 +747,33 @@ namespace SerialLCD
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show("Ошибка при обновлении UI: " + ex.Message);
+                        MessageBox.Show($"Ошибка при обновлении UI: {ex.Message}");
                         break;
                     }
                 }
-
                 long delay = 16 - renderTimeMs;
                 if (delay < 0) delay = 1;
-
-                Thread.Sleep((int)delay);
+                await Task.Delay((int)delay, token);
             }
-
-
-            // Clean up resources
-            graphics.Dispose();
-            graphicsTarget.Dispose();
-            newBmpLocal.Dispose();
-            brush.Dispose
         }
 
 
-        public void SendToSTM32(CancellationToken token)
+
+        private async Task SendToSTM32Async(CancellationToken token)
         {
             while (!token.IsCancellationRequested)
             {
                 try
                 {
+                    if (!serialPort1.IsOpen)
+                    {
+                        Invoke((MethodInvoker)delegate
+                        {
+                            MessageBox.Show("COM-порт не открыт. Пожалуйста, откройте порт.");
+                        });
+                        await Task.Delay(1000, token);
+                        continue;
+                    }
                     for (int x1 = 0; x1 < 128; x1++)
                         for (int y1 = 0; y1 < 64; y1++)
                         {
@@ -680,22 +782,20 @@ namespace SerialLCD
                             else
                                 serial_transmit_buffer[x1 + (y1 / 8) * 128] |= (byte)(1 << (y1 % 8));
                         }
-
-                    if (serialPort1.IsOpen)
-                        serialPort1.Write(serial_transmit_buffer, 0, 1024);
+                    serialPort1.Write(serial_transmit_buffer, 0, 1024);
                 }
                 catch (Exception ex)
                 {
-                    // Log or handle the exception (e.g., port closed or disconnected)
                     if (!token.IsCancellationRequested)
                     {
-                        this.Invoke((MethodInvoker)delegate
+                        Invoke((MethodInvoker)delegate
                         {
                             MessageBox.Show($"Ошибка при отправке данных: {ex.Message}");
                         });
+                        await Task.Delay(1000, token);
                     }
                 }
-                Thread.Sleep(100);
+                await Task.Delay(100, token);
             }
         }
         #endregion
