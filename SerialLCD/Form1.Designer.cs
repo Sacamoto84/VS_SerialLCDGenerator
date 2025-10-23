@@ -77,7 +77,7 @@
             this.listBox1.Name = "listBox1";
             this.listBox1.Size = new System.Drawing.Size(76, 43);
             this.listBox1.TabIndex = 0;
-            this.listBox1.SelectedIndexChanged += new System.EventHandler(this.listBox1_SelectedIndexChanged);
+
             this.listBox1.MouseDown += new System.Windows.Forms.MouseEventHandler(this.listBox1_MouseDown);
             // 
             // OPEN
@@ -184,7 +184,7 @@
             this.label1.Size = new System.Drawing.Size(35, 13);
             this.label1.TabIndex = 51;
             this.label1.Text = "label1";
-            this.label1.Click += new System.EventHandler(this.label1_Click);
+
             // 
             // bFastSave
             // 
@@ -403,8 +403,7 @@
             this.kryptonCheckSet1.AllowUncheck = true;
             this.kryptonCheckSet1.CheckButtons.Add(this.cbHLine);
             this.kryptonCheckSet1.CheckButtons.Add(this.cbVLine);
-            this.kryptonCheckSet1.CheckedButtonChanged += new System.EventHandler(this.kryptonCheckSet1_CheckedButtonChanged);
-            // 
+
             // openFileDialog1
             // 
             this.openFileDialog1.FileName = "openFileDialog1";
@@ -423,7 +422,7 @@
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Form1";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
-            this.Load += new System.EventHandler(this.Form1_Load);
+
             this.Shown += new System.EventHandler(this.Form1_Shown);
             this.panel2.ResumeLayout(false);
             this.panel2.PerformLayout();

@@ -141,6 +141,8 @@ namespace SerialLCD
 
                 // Dispose of CancellationTokenSource
                 cts.Dispose();
+                newBmp.Dispose(); // Освобождаем Bitmap
+                newBmpMini.Dispose();
             }
         }
 
@@ -176,16 +178,7 @@ namespace SerialLCD
         #endregion
 
         #region Утилиты setArray
-        public void setArray(ushort[,] array, ushort value)
-        {
-            for (int i = 0; i < 1024; i++)
-                array[i, i] = 0x0;
-        }
-        public void setArrayByte(byte[] array, byte value)
-        {
-            for (int i = 0; i < array.Length; i++)
-                array[i] = value;
-        }
+       
         public void LineH(ushort[,] array, short y, short x, short w, ushort color)
         {
             for (ushort i = 0; i < w; i++)
@@ -322,14 +315,6 @@ namespace SerialLCD
             if (e.Button == MouseButtons.Right)
                 fbMain[mouse_x, mouse_y] = 0x0000;
 
-
-
-
-
-
-
-
-
         }
         private void pictureBox1_MouseDown(object sender, MouseEventArgs e)
         {
@@ -438,15 +423,6 @@ namespace SerialLCD
                 {
                     writer.Write(serial_transmit_buffer, 0, 1024);
                 }
-
-
-
-
-                //// if ((myStream = saveFileDialog1.OpenFile()) != null)
-                // {
-                //     // Code to write the stream goes here.
-                //     myStream.Close();
-                // }
             }
 
 
@@ -559,118 +535,10 @@ namespace SerialLCD
             if (listBox1.Items.Count > 0) listBox1.SetSelected(0, true);
         }
 
-        private void listBox1_SelectedIndexChanged(object sender, EventArgs e)
-        {
-
-        }
-
-        private void kryptonCheckSet1_CheckedButtonChanged(object sender, EventArgs e)
-        {
-
-        }
-
-        private void Form1_Load(object sender, EventArgs e)
-        {
-
-        }
-
-        private void label1_Click(object sender, EventArgs e)
-        {
-
-        }
-
-
-
         #endregion
 
         #region Потоки отрисовки и отсылки
         byte[] serial_transmit_buffer = new byte[1024];
-        //public void render()
-        //{
-        //    FastBitmap output = new FastBitmap(newBmp);
-        //    int i = 0;
-        //    while (true)
-        //    {
-        //            i++;
-
-        //            ushort x, y;
-        //            ushort pix;
-
-        //            Color newColor;
-
-
-        //            for (x = 0; x < LCD_W; x++) fbMeasure[x, window_H] = 0xF81F;
-        //            for (y = 0; y < LCD_H; y++) fbMeasure[window_W, y] = 0xF81F;
-
-
-        //            for (x = 0; x < LCD_W; x++)
-        //                for (y = 0; y < LCD_H; y++)
-        //                {
-        //                    frameBufferRender[x, y] = fbMain[x, y];
-
-        //                    //Рамка окна
-        //                    if (window_Visible == 1)
-        //                        frameBufferRender[x, y] |= fbMeasure[x, y];
-
-        //                    //Контур для выдклкния
-        //                    if (contur.enable == true)
-        //                    {
-        //                        if (frameBufferLayer_Contur[x, y] == GREEN)
-        //                        {
-        //                            if (frameBufferRender[x, y] == 0) frameBufferRender[x, y] = 0x654C;
-        //                            else
-        //                                frameBufferRender[x, y] = 0x8F51; //Показать если выбран режим
-        //                        }
-        //                    }
-
-
-        //                    if (frameBufferLayer_Mouse_Cursor[x, y] > 0)
-        //                        frameBufferRender[x, y] = frameBufferLayer_Mouse_Cursor[x, y];
-
-
-
-        //                }
-
-        //            try
-        //            {
-        //            if (output.isLockImage() == 1)  output.UnlockImage();
-
-        //            output.LockImage();
-        //                for (x = 0; x < LCD_W * scale; x++)
-        //                {
-        //                    //Application.DoEvents();
-        //                    for (y = 0; y < LCD_H * scale; y++)
-        //                    {
-        //                        pix = frameBufferRender[x / scale, y / scale];
-        //                        newColor = Color.FromArgb((((pix & 0x1F)) << 3), (((pix & 0x7E0) >> 5) << 2), (((pix & 0xF800) >> 11) << 3));
-        //                        output.SetPixel(x, y, newColor);
-        //                    }
-        //                }
-        //                output.UnlockImage();
-        //            }
-        //            catch {
-        //            }
-
-        //            try
-        //            {
-        //                this.Invoke((MethodInvoker)delegate {
-        //                    label1.Text = i.ToString();
-        //                    // runs on UI thread
-        //                    pictureBox1?.Refresh();
-        //                });
-        //            }
-        //            catch (Exception ex)
-        //            {
-        //                Application.Exit();
-        //                MessageBox.Show("Ошибка: " + ex);
-        //            }
-
-        //            Thread.Sleep(1);           
-        //    }
-        //}
-
-
-
         public void Render(CancellationToken token)
         {
             int i = 0;
@@ -713,6 +581,7 @@ namespace SerialLCD
 
                 try
                 {
+                    SolidBrush brush = new SolidBrush(Color.FromArgb(0, 0, 0));
                     // Очистка изображения
                     graphics.Clear(Color.Black);
                     // Рисование квадратов
@@ -723,12 +592,12 @@ namespace SerialLCD
                             int r = (((pix & 0xF800) >> 11) << 3);
                             int g = (((pix & 0x07E0) >> 5) << 2);
                             int b = ((pix & 0x001F) << 3);
-                            using (SolidBrush brush = new SolidBrush(Color.FromArgb(r, g, b)))
-                            {
-                                int scaledX = x * scale;
-                                int scaledY = y * scale;
-                                graphics.FillRectangle(brush, scaledX, scaledY, scale, scale);
-                            }
+
+                            brush.Color = Color.FromArgb(r, g, b);
+                            int scaledX = x * scale;
+                            int scaledY = y * scale;
+                            graphics.FillRectangle(brush, scaledX, scaledY, scale, scale);
+                         
                         }
                 }
                 catch (Exception ex)
@@ -770,7 +639,10 @@ namespace SerialLCD
                     }
                 }
 
-                Thread.Sleep(16); // ~60 FPS
+                long delay = 16 - renderTimeMs;
+                if (delay < 0) delay = 1;
+
+                Thread.Sleep((int)delay);
             }
 
             // Clean up resources
@@ -809,7 +681,6 @@ namespace SerialLCD
                         });
                     }
                 }
-
                 Thread.Sleep(100);
             }
         }
