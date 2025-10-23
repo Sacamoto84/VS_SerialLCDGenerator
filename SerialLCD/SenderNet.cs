@@ -74,7 +74,27 @@ namespace SerialLCD
                     return false;
                 }
 
-                return _networkManager.SendData(data);
+                // Проверяем состояние соединения
+                if (!_networkManager.CheckConnection())
+                {
+                    Console.WriteLine("Соединение разорвано, пытаемся переподключиться...");
+                    if (!_networkManager.TryReconnect())
+                    {
+                        return false;
+                    }
+                }
+
+                // Попытка отправки данных
+                bool success = _networkManager.SendData(data);
+                
+                // Если отправка не удалась, НЕ пытаемся сразу переподключиться
+                // Это нормальное поведение для ESP32 - он может разорвать соединение
+                if (!success)
+                {
+                    Console.WriteLine("Отправка не удалась, соединение будет переподключено автоматически");
+                }
+
+                return success;
             }
 
             /// <summary>

@@ -75,6 +75,15 @@ namespace SerialLCD
 
 
         SenderNet senderNet = SenderNet.Instance;
+        private volatile bool _forceSendFlag = false; // Флаг для принудительной отправки
+        
+        /// <summary>
+        /// Принудительная отправка данных на ESP32
+        /// </summary>
+        public void ForceSendToESP32()
+        {
+            _forceSendFlag = true;
+        }
 
 
 
@@ -332,15 +341,19 @@ namespace SerialLCD
             //if (e.Button == MouseButtons.Left || e.Button == MouseButtons.Right)
             //    fbMainChanged = true; // Отмечаем изменение
 
+            if ((ModeLine == VLINE) || (ModeLine == HLINE))
+                return;
 
-            if (e.Button == MouseButtons.Left)
+                if (e.Button == MouseButtons.Left)
             {
                 fbMain[mouse_x, mouse_y] = 0xFFFF;
+                ForceSendToESP32(); // Принудительная отправка при рисовании
             }
 
             if (e.Button == MouseButtons.Right)
             {
                 fbMain[mouse_x, mouse_y] = 0x0000;
+                ForceSendToESP32(); // Принудительная отправка при стирании
             }
 
         
@@ -415,18 +428,20 @@ namespace SerialLCD
 
                 if (ModeLine == VLINE)
                 {
-                    if (e.Button == MouseButtons.Left)
-                    {
-                        lifoPush();
-                        LineV(fbMain, (short)mouse_x, 0, 64, 0xFFFF);
-                        return;
-                    }
-                    if (e.Button == MouseButtons.Right)
-                    {
-                        lifoPush();
-                        LineV(fbMain, (short)mouse_x, 0, 64, 0);
-                        return;
-                    }
+                if (e.Button == MouseButtons.Left)
+                {
+                    lifoPush();
+                    LineV(fbMain, (short)mouse_x, 0, 64, 0xFFFF);
+                    ForceSendToESP32(); // Принудительная отправка
+                    return;
+                }
+                if (e.Button == MouseButtons.Right)
+                {
+                    lifoPush();
+                    LineV(fbMain, (short)mouse_x, 0, 64, 0);
+                    ForceSendToESP32(); // Принудительная отправка
+                    return;
+                }
                 }
 
                 if (ModeLine == HLINE)
@@ -435,12 +450,14 @@ namespace SerialLCD
                     {
                         lifoPush();
                         LineH(fbMain, (short)mouse_y, 0, 128, 0xFFFF);
+                        ForceSendToESP32(); // Принудительная отправка
                         return;
                     }
                     if (e.Button == MouseButtons.Right)
                     {
                         lifoPush();
                         LineH(fbMain, (short)mouse_y, 0, 128, 0);
+                        ForceSendToESP32(); // Принудительная отправка
                         return;
                     }
                 }
@@ -449,6 +466,7 @@ namespace SerialLCD
                 {
                     lifoPush();
                     fbMain[mouse_x, mouse_y] = 0xFFFF;
+                    ForceSendToESP32(); // Принудительная отправка
                     return;
                 }
 
@@ -456,6 +474,7 @@ namespace SerialLCD
                 {
                     lifoPush();
                     fbMain[mouse_x, mouse_y] = 0;
+                    ForceSendToESP32(); // Принудительная отправка
                     return;
                 }
 
@@ -781,17 +800,28 @@ namespace SerialLCD
 
         private async Task SendToESP32Async(CancellationToken token)
         {
+            byte[] lastSentBuffer = new byte[1024]; // Буфер для сравнения
+            bool hasChanges = false;
+            int consecutiveNoChanges = 0; // Счетчик последовательных циклов без изменений
+            bool forceSend = false; // Флаг принудительной отправки
+            
             while (!token.IsCancellationRequested)
             {
                 try
                 {
-
+                    // Если нет соединения, пытаемся подключиться
                     if (!senderNet.IsConnected)
                     {
-                        await Task.Delay(1000, token);
-                        continue;
+                        Console.WriteLine("Нет соединения с ESP32, пытаемся подключиться...");
+                        senderNet.Configure("192.168.0.100", 81);
+                        if (!senderNet.Connect())
+                        {
+                            await Task.Delay(1000, token); // Уменьшаем задержку при отсутствии соединения
+                            continue;
+                        }
                     }
 
+                    // Подготавливаем данные для отправки
                     for (int x1 = 0; x1 < 128; x1++)
                         for (int y1 = 0; y1 < 64; y1++)
                         {
@@ -800,22 +830,68 @@ namespace SerialLCD
                             else
                                 serial_transmit_buffer[x1 + (y1 / 8) * 128] |= (byte)(1 << (y1 % 8));
                         }
-                    if (senderNet.IsConnected)
-                        senderNet.SendByteArray(serial_transmit_buffer);
+
+                    // Проверяем, изменились ли данные (оптимизированное сравнение)
+                    hasChanges = false;
+                    // Используем unsafe код для быстрого сравнения
+                    unsafe
+                    {
+                        fixed (byte* ptr1 = serial_transmit_buffer, ptr2 = lastSentBuffer)
+                        {
+                            for (int i = 0; i < 1024; i++)
+                            {
+                                if (ptr1[i] != ptr2[i])
+                                {
+                                    hasChanges = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    // Проверяем флаг принудительной отправки
+                    if (_forceSendFlag)
+                    {
+                        forceSend = true;
+                        _forceSendFlag = false;
+                    }
+                    
+                    // Отправляем данные при изменении или принудительно
+                    if (hasChanges || forceSend)
+                    {
+                        consecutiveNoChanges = 0; // Сбрасываем счетчик при изменениях
+                        forceSend = false; // Сбрасываем флаг принудительной отправки
+                        
+                        bool success = senderNet.SendByteArray(serial_transmit_buffer);
+                        if (success)
+                        {
+                            // Копируем отправленные данные для сравнения
+                            Array.Copy(serial_transmit_buffer, lastSentBuffer, 1024);
+                        }
+                        else
+                        {
+                            Console.WriteLine("Не удалось отправить данные, соединение может быть разорвано");
+                            await Task.Delay(100, token); // Еще больше уменьшаем задержку при ошибке
+                        }
+                    }
+                    else
+                    {
+                        consecutiveNoChanges++;
+                    }
 
                 }
                 catch (Exception ex)
                 {
                     if (!token.IsCancellationRequested)
                     {
-                        Invoke((MethodInvoker)delegate
-                        {
-                            MessageBox.Show($"Ошибка при отправке данных: {ex.Message}");
-                        });
-                        await Task.Delay(1000, token);
+                        Console.WriteLine($"Ошибка в SendToESP32Async: {ex.Message}");
+                        await Task.Delay(500, token); // Уменьшаем задержку при ошибке
                     }
                 }
-                await Task.Delay(100, token);
+                
+                // Адаптивная задержка: еще быстрее при изменениях
+                int delay = hasChanges ? 20 : Math.Min(50 + consecutiveNoChanges * 5, 200);
+                await Task.Delay(delay, token);
             }
         }
 

@@ -16,6 +16,8 @@ namespace SerialLCD.Managers
         private TcpClient _client;
         private NetworkStream _stream;
         private bool _isConnected = false;
+        private DateTime _lastConnectionAttempt = DateTime.MinValue;
+        private int _reconnectDelay = 500; // Уменьшаем начальную задержку
 
         // Приватный конструктор для Singleton
         private NetworkManager() { }
@@ -61,6 +63,10 @@ namespace SerialLCD.Managers
                 }
 
                 _client = new TcpClient();
+                // Устанавливаем таймауты для более стабильного соединения
+                _client.ReceiveTimeout = 5000;
+                _client.SendTimeout = 5000;
+                
                 _client.Connect(_ipAddress, _port);
                 _stream = _client.GetStream();
                 _isConnected = true;
@@ -126,6 +132,63 @@ namespace SerialLCD.Managers
             catch (Exception ex)
             {
                 Console.WriteLine($"Ошибка при отправке данных: {ex.Message}");
+                // При ошибке отправки помечаем соединение как разорванное
+                _isConnected = false;
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Попытка переподключения при разрыве соединения
+        /// </summary>
+        public bool TryReconnect()
+        {
+            if (_isConnected)
+                return true;
+
+            // Проверяем, прошло ли достаточно времени с последней попытки
+            var timeSinceLastAttempt = DateTime.Now - _lastConnectionAttempt;
+            if (timeSinceLastAttempt.TotalMilliseconds < _reconnectDelay)
+            {
+                Console.WriteLine($"Ожидание {_reconnectDelay}мс перед переподключением...");
+                return false;
+            }
+
+            Console.WriteLine("Попытка переподключения...");
+            _lastConnectionAttempt = DateTime.Now;
+            
+            bool success = Connect();
+            
+            if (success)
+            {
+                _reconnectDelay = 500; // Сбрасываем задержку при успешном подключении
+            }
+            else
+            {
+                // Увеличиваем задержку при неудаче (максимум 3 секунды)
+                _reconnectDelay = Math.Min(_reconnectDelay * 2, 3000);
+                Console.WriteLine($"Следующая попытка через {_reconnectDelay}мс");
+            }
+            
+            return success;
+        }
+
+        /// <summary>
+        /// Проверка состояния соединения
+        /// </summary>
+        public bool CheckConnection()
+        {
+            if (!_isConnected || _client == null || _stream == null)
+                return false;
+
+            try
+            {
+                // Проверяем, что сокет все еще подключен
+                return _client.Connected;
+            }
+            catch
+            {
+                _isConnected = false;
                 return false;
             }
         }
