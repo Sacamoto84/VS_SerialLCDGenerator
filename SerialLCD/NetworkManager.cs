@@ -246,12 +246,33 @@ namespace SerialLCD.Managers
         public bool CheckConnection()
         {
             if (!_isConnected || _client == null || _stream == null)
+            {
+                _isConnected = false;
                 return false;
+            }
 
             try
             {
                 // Проверяем, что сокет все еще подключен
-                return _client.Connected;
+                bool isConnected = _client.Connected;
+                
+                if (!isConnected)
+                {
+                    _isConnected = false;
+                    return false;
+                }
+                
+                // Дополнительная проверка - пытаемся отправить тестовые данные
+                if (_stream != null && _stream.CanWrite)
+                {
+                    // Простая проверка доступности потока
+                    return true;
+                }
+                else
+                {
+                    _isConnected = false;
+                    return false;
+                }
             }
             catch
             {
@@ -264,6 +285,40 @@ namespace SerialLCD.Managers
         /// Проверка состояния подключения
         /// </summary>
         public bool IsConnected => _isConnected;
+
+        /// <summary>
+        /// Проверка соединения с отправкой тестовых данных
+        /// </summary>
+        public bool TestConnection()
+        {
+            if (!_isConnected || _client == null || _stream == null)
+            {
+                _isConnected = false;
+                return false;
+            }
+
+            try
+            {
+                // Проверяем базовое состояние
+                if (!_client.Connected)
+                {
+                    _isConnected = false;
+                    return false;
+                }
+
+                // Пытаемся отправить тестовый байт
+                byte[] testData = { 0x00 };
+                _stream.Write(testData, 0, 1);
+                _stream.Flush();
+                
+                return true;
+            }
+            catch
+            {
+                _isConnected = false;
+                return false;
+            }
+        }
 
         /// <summary>
         /// Получение информации о подключении

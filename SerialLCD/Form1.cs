@@ -77,6 +77,7 @@ namespace SerialLCD
         SenderNet senderNet = SenderNet.Instance;
         private volatile bool _forceSendFlag = false; // Флаг для принудительной отправки
         private volatile bool _autoReconnectEnabled = false; // Глобальный флаг автоматического переподключения
+        private DateTime _lastConnectionCheck = DateTime.MinValue; // Время последней проверки соединения
         
         /// <summary>
         /// Принудительная отправка данных на ESP32
@@ -161,6 +162,43 @@ namespace SerialLCD
                 else
                 {
                     lNetStatus.Text = status;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Проверка и обновление статуса соединения
+        /// </summary>
+        private void CheckAndUpdateConnectionStatus()
+        {
+            // Проверяем соединение не чаще чем раз в 2 секунды
+            if (DateTime.Now - _lastConnectionCheck < TimeSpan.FromSeconds(2))
+                return;
+
+            _lastConnectionCheck = DateTime.Now;
+
+            if (senderNet.IsConnected)
+            {
+                // Тестируем реальное соединение
+                if (senderNet.TestConnection())
+                {
+                    UpdateConnectionStatus("Подключено");
+                }
+                else
+                {
+                    UpdateConnectionStatus("Ошибка соединения");
+                    _autoReconnectEnabled = false; // Отключаем авто-переподключение при ошибке
+                }
+            }
+            else
+            {
+                if (_autoReconnectEnabled)
+                {
+                    UpdateConnectionStatus("Переподключение...");
+                }
+                else
+                {
+                    UpdateConnectionStatus("Отключено");
                 }
             }
         }
@@ -965,6 +1003,8 @@ namespace SerialLCD
             {
                 try
                 {
+                    // Проверяем и обновляем статус соединения
+                    CheckAndUpdateConnectionStatus();
                     // Если нет соединения, проверяем режим работы
                     if (!senderNet.IsConnected)
                     {
@@ -1057,6 +1097,7 @@ namespace SerialLCD
                         }
                         else
                         {
+                            UpdateConnectionStatus("Ошибка отправки");
                             Console.WriteLine("Не удалось отправить данные, соединение может быть разорвано");
                             await Task.Delay(100, token); // Еще больше уменьшаем задержку при ошибке
                         }
@@ -1071,6 +1112,7 @@ namespace SerialLCD
                 {
                     if (!token.IsCancellationRequested)
                     {
+                        UpdateConnectionStatus("Ошибка соединения");
                         Console.WriteLine($"Ошибка в SendToESP32Async: {ex.Message}");
                         await Task.Delay(500, token); // Уменьшаем задержку при ошибке
                     }

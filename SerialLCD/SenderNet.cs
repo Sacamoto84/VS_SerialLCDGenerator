@@ -112,6 +112,14 @@ namespace SerialLCD
             public bool IsConnected => _networkManager.IsConnected;
 
             /// <summary>
+            /// Тестирование соединения
+            /// </summary>
+            public bool TestConnection()
+            {
+                return _networkManager.TestConnection();
+            }
+
+            /// <summary>
             /// Получение информации о подключении
             /// </summary>
             public string ConnectionInfo => _networkManager.ConnectionInfo;
