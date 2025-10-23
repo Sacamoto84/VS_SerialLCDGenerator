@@ -10,6 +10,8 @@ using System.Drawing;
 using System.IO;
 using System.IO.Ports;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,12 +32,13 @@ namespace SerialLCD
         public byte state;
     }
 
-    public partial class Form1 : KryptonForm
+    public partial class Form1 : Form
     {
 
         private Task Proceso1;
         private Task tSendToSTM32;
         private Task tSendToESP32;
+        private Task tSendToESP32Udp;
 
 
         const int scale = 8;
@@ -72,21 +75,11 @@ namespace SerialLCD
 
         private CancellationTokenSource cts = new CancellationTokenSource();
 
+        private bool isUDPSelect = true;
 
-
-        SenderNet senderNet = SenderNet.Instance;
-        private volatile bool _forceSendFlag = false; // Флаг для принудительной отправки
-        private volatile bool _autoReconnectEnabled = false; // Глобальный флаг автоматического переподключения
         private DateTime _lastConnectionCheck = DateTime.MinValue; // Время последней проверки соединения
         
-        /// <summary>
-        /// Принудительная отправка данных на ESP32
-        /// </summary>
-        public void ForceSendToESP32()
-        {
-            _forceSendFlag = true;
-        }
-
+   
         /// <summary>
         /// Валидация IP-адреса
         /// </summary>
@@ -115,97 +108,52 @@ namespace SerialLCD
         {
             try
             {
+                if (!IsValidIPAddress(ip))
+                {
+                    throw new ArgumentException("Некорректный IP-адрес");
+                }
                 Properties.Settings.Default.LastIPAddress = ip;
                 Properties.Settings.Default.Save();
+                Console.Beep(1000, 100); // Звуковой сигнал, как вы просили ранее
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка при сохранении IP-адреса: {ex.Message}");
+                // Логируем полную информацию об ошибке
+                Console.WriteLine($"Ошибка при сохранении IP-адреса: {ex}");
+                // Показываем сообщение пользователю (опционально)
+                MessageBox.Show($"Не удалось сохранить IP-адрес: {ex.Message}", "Ошибка",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
-        /// <summary>
-        /// Загрузка IP-адреса из настроек
-        /// </summary>
+        private const string DefaultIPAddress = "192.168.0.100"; // Константа для IP по умолчанию
+
         private void LoadIPAddress()
         {
             try
             {
                 string savedIP = Properties.Settings.Default.LastIPAddress;
-                if (!string.IsNullOrEmpty(savedIP) && IsValidIPAddress(savedIP))
-                {
-                    tbIpClient.Text = savedIP;
-                }
-                else
-                {
-                    tbIpClient.Text = "192.168.0.100"; // IP по умолчанию
-                }
+                tbIpClient.Text = (!string.IsNullOrEmpty(savedIP) && IsValidIPAddress(savedIP))
+                    ? savedIP
+                    : DefaultIPAddress;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка при загрузке IP-адреса: {ex.Message}");
-                tbIpClient.Text = "192.168.0.100"; // IP по умолчанию
-            }
-        }
-
-        /// <summary>
-        /// Обновление статуса подключения
-        /// </summary>
-        private void UpdateConnectionStatus(string status)
-        {
-            if (lNetStatus != null && !lNetStatus.IsDisposed)
-            {
-                if (lNetStatus.InvokeRequired)
+                Console.WriteLine($"Ошибка при загрузке IP-адреса: {ex}");
+                if (tbIpClient.InvokeRequired)
                 {
-                    lNetStatus.Invoke(new Action(() => lNetStatus.Text = status));
+                    // Используем Action для явного указания типа делегата
+                    tbIpClient.Invoke(new Action(() => tbIpClient.Text = DefaultIPAddress));
                 }
                 else
                 {
-                    lNetStatus.Text = status;
+                    tbIpClient.Text = DefaultIPAddress;
                 }
+                // Опционально: уведомление через MessageBox
+                MessageBox.Show($"Не удалось загрузить IP-адрес: {ex.Message}", "Ошибка",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-
-        /// <summary>
-        /// Проверка и обновление статуса соединения
-        /// </summary>
-        private void CheckAndUpdateConnectionStatus()
-        {
-            // Проверяем соединение не чаще чем раз в 5 секунд
-            if (DateTime.Now - _lastConnectionCheck < TimeSpan.FromSeconds(5))
-                return;
-
-            _lastConnectionCheck = DateTime.Now;
-
-            if (senderNet.IsConnected)
-            {
-                // Тестируем реальное соединение
-                if (senderNet.TestConnection())
-                {
-                    UpdateConnectionStatus("Подключено");
-                }
-                else
-                {
-                    // Не считаем разрыв соединения ошибкой - это нормальное поведение ESP32
-                    UpdateConnectionStatus("Готов к передаче");
-                }
-            }
-            else
-            {
-                if (_autoReconnectEnabled)
-                {
-                    UpdateConnectionStatus("Готов к передаче");
-                }
-                else
-                {
-                    UpdateConnectionStatus("Отключено");
-                }
-            }
-        }
-
-
-
-
 
         void lifoPush()
         {
@@ -247,9 +195,9 @@ namespace SerialLCD
 
             Proceso1 = Task.Run(() => RenderAsync(cts.Token), cts.Token);
             tSendToSTM32 = Task.Run(() => SendToSTM32Async(cts.Token), cts.Token);
-            tSendToESP32 = Task.Run(() => SendToESP32Async(cts.Token), cts.Token);
+            tSendToESP32Udp = Task.Run(() => SendToESP32UdpAsync(cts.Token), cts.Token); ;
 
-            contur = new _contur { x1 = 0, y1 = 0, x2 = 1, y2 = 1, w = 1, h = 1, enable = false, visible = false, state = 0 };
+        contur = new _contur { x1 = 0, y1 = 0, x2 = 1, y2 = 1, w = 1, h = 1, enable = false, visible = false, state = 0 };
 
         }
         private void Form1_Shown(object sender, EventArgs e)
@@ -266,9 +214,7 @@ namespace SerialLCD
             
             // Загружаем сохраненный IP-адрес
             LoadIPAddress();
-            
-            // Устанавливаем начальный статус
-            UpdateConnectionStatus("Отключено");
+   
         }
         private async void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
@@ -471,13 +417,11 @@ namespace SerialLCD
                 if (e.Button == MouseButtons.Left)
             {
                 fbMain[mouse_x, mouse_y] = 0xFFFF;
-                ForceSendToESP32(); // Принудительная отправка при рисовании
             }
 
             if (e.Button == MouseButtons.Right)
             {
                 fbMain[mouse_x, mouse_y] = 0x0000;
-                ForceSendToESP32(); // Принудительная отправка при стирании
             }
 
         
@@ -556,14 +500,12 @@ namespace SerialLCD
                 {
                     lifoPush();
                     LineV(fbMain, (short)mouse_x, 0, 64, 0xFFFF);
-                    ForceSendToESP32(); // Принудительная отправка
                     return;
                 }
                 if (e.Button == MouseButtons.Right)
                 {
                     lifoPush();
                     LineV(fbMain, (short)mouse_x, 0, 64, 0);
-                    ForceSendToESP32(); // Принудительная отправка
                     return;
                 }
                 }
@@ -574,14 +516,12 @@ namespace SerialLCD
                     {
                         lifoPush();
                         LineH(fbMain, (short)mouse_y, 0, 128, 0xFFFF);
-                        ForceSendToESP32(); // Принудительная отправка
                         return;
                     }
                     if (e.Button == MouseButtons.Right)
                     {
                         lifoPush();
                         LineH(fbMain, (short)mouse_y, 0, 128, 0);
-                        ForceSendToESP32(); // Принудительная отправка
                         return;
                     }
                 }
@@ -590,7 +530,6 @@ namespace SerialLCD
                 {
                     lifoPush();
                     fbMain[mouse_x, mouse_y] = 0xFFFF;
-                    ForceSendToESP32(); // Принудительная отправка
                     return;
                 }
 
@@ -598,7 +537,6 @@ namespace SerialLCD
                 {
                     lifoPush();
                     fbMain[mouse_x, mouse_y] = 0;
-                    ForceSendToESP32(); // Принудительная отправка
                     return;
                 }
 
@@ -762,69 +700,6 @@ namespace SerialLCD
         #region Потоки отрисовки и отсылки
         byte[] serial_transmit_buffer = new byte[1024];
 
-        private async void bNetConnect_Click(object sender, EventArgs e)
-        {
-            string ip = tbIpClient.Text.Trim();
-            
-            // Валидация IP-адреса
-            if (!IsValidIPAddress(ip))
-            {
-                MessageBox.Show("Неверный формат IP-адреса! Используйте формат: 192.168.1.100", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-            
-            // Блокируем кнопки во время подключения
-            bNetConnect.Enabled = false;
-            bNetConnect.Text = "Подключение...";
-            UpdateConnectionStatus("Подключение...");
-            
-            try
-            {
-                // Сохраняем IP-адрес в настройки
-                SaveIPAddress(ip);
-                
-                // Настраиваем и подключаемся асинхронно
-                senderNet.Configure(ip, 81);
-                bool connected = await senderNet.ConnectAsync();
-                
-                if (connected)
-                {
-                    _autoReconnectEnabled = true; // Включаем автоматическое переподключение
-                    bNetDisconnect.Enabled = true;
-                    bNetConnect.Text = "Подключено";
-                    UpdateConnectionStatus("Подключено");
-                    // Можно показать уведомление в статусной строке или логе
-                    Console.WriteLine($"Успешно подключено к {ip}:81");
-                }
-                else
-                {
-                    _autoReconnectEnabled = false; // Отключаем при неудаче
-                    bNetConnect.Enabled = true;
-                    bNetConnect.Text = "Подключить";
-                    UpdateConnectionStatus("Ошибка подключения");
-                    MessageBox.Show($"Не удалось подключиться к {ip}:81\nПроверьте IP-адрес и доступность устройства", "Ошибка подключения", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-            }
-            catch (Exception ex)
-            {
-                _autoReconnectEnabled = false;
-                bNetConnect.Enabled = true;
-                bNetConnect.Text = "Подключить";
-                UpdateConnectionStatus("Ошибка");
-                MessageBox.Show($"Ошибка при подключении: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        private void bNetDisconnect_Click_1(object sender, EventArgs e)
-        {
-            _autoReconnectEnabled = false; // Отключаем автоматическое переподключение
-            senderNet.Disconnect();
-            bNetConnect.Enabled = true;
-            bNetConnect.Text = "Подключить";
-            bNetDisconnect.Enabled = false;
-            UpdateConnectionStatus("Отключено");
-            Console.WriteLine("Отключено от ESP32 - автоматическое переподключение отключено");
-        }
 
         private void bFill_Click(object sender, EventArgs e)
         {
@@ -836,6 +711,14 @@ namespace SerialLCD
                     fbMain[i, j] = 0xFFFF;
                 }
             }
+        }
+
+        private void tbIpClient_TextChanged(object sender, EventArgs e)
+        {
+            String values = tbIpClient.Text;
+            if (!IsValidIPAddress(values)) return;
+            SaveIPAddress(values);
+            Console.Beep(); // Воспроизводит звуковой сигнал
         }
 
         private async Task RenderAsync(CancellationToken token)
@@ -950,8 +833,8 @@ namespace SerialLCD
                 newBmpLocal?.Dispose();
             }
         }
-// 
 
+ 
         private async Task SendToSTM32Async(CancellationToken token)
         {
             while (!token.IsCancellationRequested)
@@ -992,64 +875,22 @@ namespace SerialLCD
             }
         }
 
-        private async Task SendToESP32Async(CancellationToken token)
+        private async Task SendToESP32UdpAsync(CancellationToken token)
         {
-            byte[] lastSentBuffer = new byte[1024]; // Буфер для сравнения
-            bool hasChanges = false;
-            int consecutiveNoChanges = 0; // Счетчик последовательных циклов без изменений
-            bool forceSend = false; // Флаг принудительной отправки
-            
+          
+            UdpClient udpClient = new UdpClient();
+
             while (!token.IsCancellationRequested)
             {
+
                 try
                 {
-                    // Проверяем и обновляем статус соединения
-                    CheckAndUpdateConnectionStatus();
-                    // Если нет соединения, проверяем режим работы
-                    if (!senderNet.IsConnected)
-                    {
-                        if (_autoReconnectEnabled)
-                        {
-                            // Автоматическое переподключение включено - пытаемся переподключиться
-                            UpdateConnectionStatus("Переподключение...");
-                            Console.WriteLine("Соединение разорвано, пытаемся переподключиться автоматически...");
-                            if (!senderNet.IsConnected) // Дополнительная проверка
-                            {
-                                // Получаем сохраненный IP из настроек
-                                string savedIP = Properties.Settings.Default.LastIPAddress;
-                                if (!string.IsNullOrEmpty(savedIP) && IsValidIPAddress(savedIP))
-                                {
-                                    senderNet.Configure(savedIP, 81);
-                                    if (senderNet.Connect())
-                                    {
-                                        UpdateConnectionStatus("Подключено");
-                                        Console.WriteLine($"Автоматически переподключились к {savedIP}:81");
-                                    }
-                                    else
-                                    {
-                                        UpdateConnectionStatus("Готов к передаче");
-                                        Console.WriteLine("Не удалось автоматически переподключиться");
-                                        await Task.Delay(2000, token);
-                                        continue;
-                                    }
-                                }
-                                else
-                                {
-                                    UpdateConnectionStatus("Готов к передаче");
-                                    Console.WriteLine("Нет сохраненного IP-адреса для автоматического переподключения");
-                                    await Task.Delay(2000, token);
-                                    continue;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            // Автоматическое переподключение отключено - ждем подключения пользователем
-                            await Task.Delay(2000, token);
-                            continue;
-                        }
-                    }
 
+                    if (!isUDPSelect)
+                    {
+                        await Task.Delay(500, token);
+                        continue;
+                    }
                     // Подготавливаем данные для отправки
                     for (int x1 = 0; x1 < 128; x1++)
                         for (int y1 = 0; y1 < 64; y1++)
@@ -1060,101 +901,181 @@ namespace SerialLCD
                                 serial_transmit_buffer[x1 + (y1 / 8) * 128] |= (byte)(1 << (y1 % 8));
                         }
 
-                    // Проверяем, изменились ли данные (оптимизированное сравнение)
-                    hasChanges = false;
-                    // Используем unsafe код для быстрого сравнения
-                    unsafe
+
+                    string ip = tbIpClient.Text.Trim();
+
+                    // Валидация IP-адреса
+                    if (!IsValidIPAddress(ip))
                     {
-                        fixed (byte* ptr1 = serial_transmit_buffer, ptr2 = lastSentBuffer)
-                        {
-                            for (int i = 0; i < 1024; i++)
-                            {
-                                if (ptr1[i] != ptr2[i])
-                                {
-                                    hasChanges = true;
-                                    break;
-                                }
-                            }
-                        }
+                        await Task.Delay(500, token);
+                        continue;
                     }
 
-                    // Проверяем флаг принудительной отправки
-                    if (_forceSendFlag)
-                    {
-                        forceSend = true;
-                        _forceSendFlag = false;
-                    }
-                    
-                    // Отправляем данные при изменении или принудительно
-                    if (hasChanges || forceSend)
-                    {
-                        consecutiveNoChanges = 0; // Сбрасываем счетчик при изменениях
-                        forceSend = false; // Сбрасываем флаг принудительной отправки
-                        
-                        bool success = senderNet.SendByteArray(serial_transmit_buffer);
-                        if (success)
-                        {
-                            // Копируем отправленные данные для сравнения
-                            Array.Copy(serial_transmit_buffer, lastSentBuffer, 1024);
-                        }
-                        else
-                        {
-                            // Не показываем ошибку сразу - это может быть нормальное поведение ESP32
-                            Console.WriteLine("Не удалось отправить данные, соединение разорвано");
-                            await Task.Delay(100, token); // Еще больше уменьшаем задержку при ошибке
-                        }
-                    }
-                    else
-                    {
-                        consecutiveNoChanges++;
-                    }
+                    udpClient.Send(serial_transmit_buffer, serial_transmit_buffer.Length, tbIpClient.Text, 82);
 
                 }
                 catch (Exception ex)
                 {
                     if (!token.IsCancellationRequested)
                     {
-                        // Не показываем ошибку соединения - это может быть нормальное поведение
-                        Console.WriteLine($"Ошибка в SendToESP32Async: {ex.Message}");
-                        await Task.Delay(500, token); // Уменьшаем задержку при ошибке
+                        Invoke((MethodInvoker)delegate
+                        {
+                            MessageBox.Show($"Ошибка при отправке данных: {ex.Message}");
+                        });
+                        await Task.Delay(1000, token);
                     }
                 }
-                
-                // Адаптивная задержка: еще быстрее при изменениях
-                int delay = hasChanges ? 20 : Math.Min(50 + consecutiveNoChanges * 5, 200);
-                await Task.Delay(delay, token);
+
+                await Task.Delay(16, token);
             }
+
+            udpClient.Dispose();
         }
 
-
-
-
-
-
-
-
-
-
-        //public void SendToESP32()
+        //private async Task SendToESP32Async(CancellationToken token)
         //{
-
-        //    while (true)
+        //    byte[] lastSentBuffer = new byte[1024]; // Буфер для сравнения
+        //    bool hasChanges = false;
+        //    int consecutiveNoChanges = 0; // Счетчик последовательных циклов без изменений
+        //    bool forceSend = false; // Флаг принудительной отправки
+            
+        //    while (!token.IsCancellationRequested)
         //    {
-        //        for (int x1 = 0; x1 < 128; x1++)
-        //            for (int y1 = 0; y1 < 64; y1++)
+        //        try
+        //        {
+        //            // Проверяем и обновляем статус соединения
+        //            CheckAndUpdateConnectionStatus();
+        //            // Если нет соединения, проверяем режим работы
+        //            if (!senderNet.IsConnected)
         //            {
-        //                if (fbMain[x1, y1] == 0)
-        //                    serial_transmit_buffer[x1 + (y1 / 8) * 128] &= (byte)(~(1 << (y1 % 8)));
+        //                if (_autoReconnectEnabled)
+        //                {
+        //                    // Автоматическое переподключение включено - пытаемся переподключиться
+        //                    UpdateConnectionStatus("Переподключение...");
+        //                    Console.WriteLine("Соединение разорвано, пытаемся переподключиться автоматически...");
+        //                    if (!senderNet.IsConnected) // Дополнительная проверка
+        //                    {
+        //                        // Получаем сохраненный IP из настроек
+        //                        string savedIP = Properties.Settings.Default.LastIPAddress;
+        //                        if (!string.IsNullOrEmpty(savedIP) && IsValidIPAddress(savedIP))
+        //                        {
+        //                            senderNet.Configure(savedIP, 81);
+        //                            if (senderNet.Connect())
+        //                            {
+        //                                UpdateConnectionStatus("Подключено");
+        //                                Console.WriteLine($"Автоматически переподключились к {savedIP}:81");
+        //                            }
+        //                            else
+        //                            {
+        //                                UpdateConnectionStatus("Готов к передаче");
+        //                                Console.WriteLine("Не удалось автоматически переподключиться");
+        //                                await Task.Delay(2000, token);
+        //                                continue;
+        //                            }
+        //                        }
+        //                        else
+        //                        {
+        //                            UpdateConnectionStatus("Готов к передаче");
+        //                            Console.WriteLine("Нет сохраненного IP-адреса для автоматического переподключения");
+        //                            await Task.Delay(2000, token);
+        //                            continue;
+        //                        }
+        //                    }
+        //                }
         //                else
-        //                    serial_transmit_buffer[x1 + (y1 / 8) * 128] |= (byte)(1 << (y1 % 8));
+        //                {
+        //                    // Автоматическое переподключение отключено - ждем подключения пользователем
+        //                    await Task.Delay(2000, token);
+        //                    continue;
+        //                }
         //            }
 
-        //        senderNet.SendByteArray(serial_transmit_buffer);
-        //        Thread.Sleep(100);
+        //            // Подготавливаем данные для отправки
+        //            for (int x1 = 0; x1 < 128; x1++)
+        //                for (int y1 = 0; y1 < 64; y1++)
+        //                {
+        //                    if (fbMain[x1, y1] == 0)
+        //                        serial_transmit_buffer[x1 + (y1 / 8) * 128] &= (byte)(~(1 << (y1 % 8)));
+        //                    else
+        //                        serial_transmit_buffer[x1 + (y1 / 8) * 128] |= (byte)(1 << (y1 % 8));
+        //                }
+
+        //            // Проверяем, изменились ли данные (оптимизированное сравнение)
+        //            hasChanges = false;
+        //            // Используем unsafe код для быстрого сравнения
+        //            unsafe
+        //            {
+        //                fixed (byte* ptr1 = serial_transmit_buffer, ptr2 = lastSentBuffer)
+        //                {
+        //                    for (int i = 0; i < 1024; i++)
+        //                    {
+        //                        if (ptr1[i] != ptr2[i])
+        //                        {
+        //                            hasChanges = true;
+        //                            break;
+        //                        }
+        //                    }
+        //                }
+        //            }
+
+        //            // Проверяем флаг принудительной отправки
+        //            if (_forceSendFlag)
+        //            {
+        //                forceSend = true;
+        //                _forceSendFlag = false;
+        //            }
+                    
+        //            // Отправляем данные при изменении или принудительно
+        //            if (hasChanges || forceSend)
+        //            {
+        //                consecutiveNoChanges = 0; // Сбрасываем счетчик при изменениях
+        //                forceSend = false; // Сбрасываем флаг принудительной отправки
+                        
+        //                bool success = senderNet.SendByteArray(serial_transmit_buffer);
+        //                if (success)
+        //                {
+        //                    // Копируем отправленные данные для сравнения
+        //                    Array.Copy(serial_transmit_buffer, lastSentBuffer, 1024);
+        //                }
+        //                else
+        //                {
+        //                    // Не показываем ошибку сразу - это может быть нормальное поведение ESP32
+        //                    Console.WriteLine("Не удалось отправить данные, соединение разорвано");
+        //                    await Task.Delay(100, token); // Еще больше уменьшаем задержку при ошибке
+        //                }
+        //            }
+        //            else
+        //            {
+        //                consecutiveNoChanges++;
+        //            }
+
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            if (!token.IsCancellationRequested)
+        //            {
+        //                // Не показываем ошибку соединения - это может быть нормальное поведение
+        //                Console.WriteLine($"Ошибка в SendToESP32Async: {ex.Message}");
+        //                await Task.Delay(500, token); // Уменьшаем задержку при ошибке
+        //            }
+        //        }
+                
+        //        // Адаптивная задержка: еще быстрее при изменениях
+        //        int delay = hasChanges ? 20 : Math.Min(50 + consecutiveNoChanges * 5, 200);
+        //        await Task.Delay(delay, token);
         //    }
-
-
         //}
+
+
+
+
+
+
+
+
+
+
+
 
 
         #endregion

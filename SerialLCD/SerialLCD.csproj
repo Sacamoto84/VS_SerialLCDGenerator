@@ -105,10 +105,8 @@
       <DependentUpon>Form2.cs</DependentUpon>
     </Compile>
     <Compile Include="LifoBuffer.cs" />
-    <Compile Include="NetworkManager.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SenderNet.cs" />
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
     </EmbeddedResource>
