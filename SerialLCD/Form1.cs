@@ -674,10 +674,10 @@ namespace SerialLCD
         private async Task RenderAsync(CancellationToken token)
         {
             int i = 0;
-            using Bitmap newBmpLocal = new Bitmap(128 * scale, 64 * scale);
-            using Graphics graphics = Graphics.FromImage(newBmpLocal);
-            using Graphics graphicsTarget = Graphics.FromImage(newBmp);
-            using SolidBrush brush = new SolidBrush(Color.Black);
+            Bitmap newBmpLocal = new Bitmap(128 * scale, 64 * scale);
+            Graphics graphics = Graphics.FromImage(newBmpLocal);
+            Graphics graphicsTarget = Graphics.FromImage(newBmp);
+            SolidBrush brush = new SolidBrush(Color.Black);
             Stopwatch stopwatch = new Stopwatch();
 
             while (!token.IsCancellationRequested)
@@ -765,15 +765,13 @@ namespace SerialLCD
             {
                 try
                 {
+
                     if (!serialPort1.IsOpen)
                     {
-                        Invoke((MethodInvoker)delegate
-                        {
-                            MessageBox.Show("COM-порт не открыт. Пожалуйста, откройте порт.");
-                        });
                         await Task.Delay(1000, token);
                         continue;
                     }
+
                     for (int x1 = 0; x1 < 128; x1++)
                         for (int y1 = 0; y1 < 64; y1++)
                         {
