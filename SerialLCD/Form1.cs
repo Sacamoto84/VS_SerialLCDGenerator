@@ -171,8 +171,8 @@ namespace SerialLCD
         /// </summary>
         private void CheckAndUpdateConnectionStatus()
         {
-            // Проверяем соединение не чаще чем раз в 2 секунды
-            if (DateTime.Now - _lastConnectionCheck < TimeSpan.FromSeconds(2))
+            // Проверяем соединение не чаще чем раз в 5 секунд
+            if (DateTime.Now - _lastConnectionCheck < TimeSpan.FromSeconds(5))
                 return;
 
             _lastConnectionCheck = DateTime.Now;
@@ -186,15 +186,15 @@ namespace SerialLCD
                 }
                 else
                 {
-                    UpdateConnectionStatus("Ошибка соединения");
-                    _autoReconnectEnabled = false; // Отключаем авто-переподключение при ошибке
+                    // Не считаем разрыв соединения ошибкой - это нормальное поведение ESP32
+                    UpdateConnectionStatus("Готов к передаче");
                 }
             }
             else
             {
                 if (_autoReconnectEnabled)
                 {
-                    UpdateConnectionStatus("Переподключение...");
+                    UpdateConnectionStatus("Готов к передаче");
                 }
                 else
                 {
@@ -1011,6 +1011,7 @@ namespace SerialLCD
                         if (_autoReconnectEnabled)
                         {
                             // Автоматическое переподключение включено - пытаемся переподключиться
+                            UpdateConnectionStatus("Переподключение...");
                             Console.WriteLine("Соединение разорвано, пытаемся переподключиться автоматически...");
                             if (!senderNet.IsConnected) // Дополнительная проверка
                             {
@@ -1026,7 +1027,7 @@ namespace SerialLCD
                                     }
                                     else
                                     {
-                                        UpdateConnectionStatus("Попытка переподключения...");
+                                        UpdateConnectionStatus("Готов к передаче");
                                         Console.WriteLine("Не удалось автоматически переподключиться");
                                         await Task.Delay(2000, token);
                                         continue;
@@ -1034,6 +1035,7 @@ namespace SerialLCD
                                 }
                                 else
                                 {
+                                    UpdateConnectionStatus("Готов к передаче");
                                     Console.WriteLine("Нет сохраненного IP-адреса для автоматического переподключения");
                                     await Task.Delay(2000, token);
                                     continue;
@@ -1097,8 +1099,8 @@ namespace SerialLCD
                         }
                         else
                         {
-                            UpdateConnectionStatus("Ошибка отправки");
-                            Console.WriteLine("Не удалось отправить данные, соединение может быть разорвано");
+                            // Не показываем ошибку сразу - это может быть нормальное поведение ESP32
+                            Console.WriteLine("Не удалось отправить данные, соединение разорвано");
                             await Task.Delay(100, token); // Еще больше уменьшаем задержку при ошибке
                         }
                     }
@@ -1112,7 +1114,7 @@ namespace SerialLCD
                 {
                     if (!token.IsCancellationRequested)
                     {
-                        UpdateConnectionStatus("Ошибка соединения");
+                        // Не показываем ошибку соединения - это может быть нормальное поведение
                         Console.WriteLine($"Ошибка в SendToESP32Async: {ex.Message}");
                         await Task.Delay(500, token); // Уменьшаем задержку при ошибке
                     }
