@@ -44,10 +44,12 @@ namespace SerialLCD
         public ushort[,] frameBufferLayer_Contur = new ushort[128, 64];
         public ushort[,] frameBufferLayer_Mouse_Cursor = new ushort[128, 64];
         public ushort[,] fbMeasure = new ushort[128, 64]; //Рамка
-        public ushort[,] fbMain = new ushort[128, 64];
-        public ushort[,] frameBufferRender = new ushort[128, 64];
 
-        public ushort[,] fbCopy;
+   
+        public ushort[,] fbMain = new ushort[128, 64];
+      
+
+        public ushort[,] frameBufferRender = new ushort[128, 64];
 
         public _contur contur;
 
@@ -231,6 +233,7 @@ namespace SerialLCD
         private void bClear_Click(object sender, EventArgs e)
         {
             Array.Clear(fbMain, 0, fbMain.Length);
+            //fbMainChanged = true; // Отмечаем изменение
         }
         private void bMassiv_Click(object sender, EventArgs e)
         {
@@ -309,11 +312,21 @@ namespace SerialLCD
                 }
             }
 
+            //if (e.Button == MouseButtons.Left || e.Button == MouseButtons.Right)
+            //    fbMainChanged = true; // Отмечаем изменение
+
             if (e.Button == MouseButtons.Left)
+            {
                 fbMain[mouse_x, mouse_y] = 0xFFFF;
+            }
 
             if (e.Button == MouseButtons.Right)
+            {
                 fbMain[mouse_x, mouse_y] = 0x0000;
+            }
+
+            //if (e.Button == MouseButtons.Left || e.Button == MouseButtons.Right || ModeLine != NONE)
+            //    fbMainChanged = true; // Отмечаем изменение при рисовании линий или пикселей
 
         }
         private void pictureBox1_MouseDown(object sender, MouseEventArgs e)
@@ -524,14 +537,12 @@ namespace SerialLCD
 
         private void listBox1_MouseDown(object sender, MouseEventArgs e)
         {
-            // Получить список COM портов 
+            listBox1.Items.Clear();
             string[] ports = SerialPort.GetPortNames();
-
             foreach (string port in ports)
             {
                 listBox1.Items.Add(port);
             }
-
             if (listBox1.Items.Count > 0) listBox1.SetSelected(0, true);
         }
 
@@ -539,6 +550,7 @@ namespace SerialLCD
 
         #region Потоки отрисовки и отсылки
         byte[] serial_transmit_buffer = new byte[1024];
+
         public void Render(CancellationToken token)
         {
             int i = 0;
@@ -546,6 +558,7 @@ namespace SerialLCD
             Graphics graphics = Graphics.FromImage(newBmpLocal); // Создаём Graphics один раз
             Graphics graphicsTarget = Graphics.FromImage(newBmp); // Graphics для глобального Bitmap
             Stopwatch stopwatch = new Stopwatch(); // Для измерения времени
+            SolidBrush brush = new SolidBrush(Color.Black);
 
             while (!token.IsCancellationRequested)
             {
@@ -580,8 +593,7 @@ namespace SerialLCD
                     }
 
                 try
-                {
-                    SolidBrush brush = new SolidBrush(Color.FromArgb(0, 0, 0));
+                {                  
                     // Очистка изображения
                     graphics.Clear(Color.Black);
                     // Рисование квадратов
@@ -645,10 +657,12 @@ namespace SerialLCD
                 Thread.Sleep((int)delay);
             }
 
+
             // Clean up resources
             graphics.Dispose();
             graphicsTarget.Dispose();
             newBmpLocal.Dispose();
+            brush.Dispose
         }
 
 
