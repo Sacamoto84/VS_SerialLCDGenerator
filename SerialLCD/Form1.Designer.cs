@@ -37,8 +37,11 @@
             this.label3 = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
             this.panel2 = new System.Windows.Forms.Panel();
+            this.bUndoClear = new System.Windows.Forms.Button();
+            this.bUndo = new System.Windows.Forms.Button();
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.tabPage1 = new System.Windows.Forms.TabPage();
+            this.bNetConnect = new System.Windows.Forms.Button();
             this.tabPage2 = new System.Windows.Forms.TabPage();
             this.panel4 = new System.Windows.Forms.Panel();
             this.bMeasureSet = new System.Windows.Forms.Button();
@@ -66,9 +69,8 @@
             this.kryptonManager1 = new ComponentFactory.Krypton.Toolkit.KryptonManager(this.components);
             this.saveFileDialog1 = new System.Windows.Forms.SaveFileDialog();
             this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
-            this.bUndo = new System.Windows.Forms.Button();
-            this.bUndoClear = new System.Windows.Forms.Button();
-            this.bNetConnect = new System.Windows.Forms.Button();
+            this.tbIpClient = new System.Windows.Forms.TextBox();
+            this.bNetDisconnect = new System.Windows.Forms.Button();
             this.panel2.SuspendLayout();
             this.tabControl1.SuspendLayout();
             this.tabPage1.SuspendLayout();
@@ -178,6 +180,26 @@
             this.panel2.Size = new System.Drawing.Size(2733, 230);
             this.panel2.TabIndex = 22;
             // 
+            // bUndoClear
+            // 
+            this.bUndoClear.Location = new System.Drawing.Point(1043, 111);
+            this.bUndoClear.Name = "bUndoClear";
+            this.bUndoClear.Size = new System.Drawing.Size(112, 55);
+            this.bUndoClear.TabIndex = 57;
+            this.bUndoClear.Text = "Clear";
+            this.bUndoClear.UseVisualStyleBackColor = true;
+            this.bUndoClear.Click += new System.EventHandler(this.bUndoClear_Click);
+            // 
+            // bUndo
+            // 
+            this.bUndo.Location = new System.Drawing.Point(1161, 108);
+            this.bUndo.Name = "bUndo";
+            this.bUndo.Size = new System.Drawing.Size(184, 58);
+            this.bUndo.TabIndex = 56;
+            this.bUndo.Text = "Undo: 0";
+            this.bUndo.UseVisualStyleBackColor = true;
+            this.bUndo.Click += new System.EventHandler(this.bUndo_Click);
+            // 
             // tabControl1
             // 
             this.tabControl1.Controls.Add(this.tabPage1);
@@ -190,6 +212,8 @@
             // 
             // tabPage1
             // 
+            this.tabPage1.Controls.Add(this.bNetDisconnect);
+            this.tabPage1.Controls.Add(this.tbIpClient);
             this.tabPage1.Controls.Add(this.bNetConnect);
             this.tabPage1.Location = new System.Drawing.Point(10, 48);
             this.tabPage1.Name = "tabPage1";
@@ -198,6 +222,16 @@
             this.tabPage1.TabIndex = 0;
             this.tabPage1.Text = "Сеть";
             this.tabPage1.UseVisualStyleBackColor = true;
+            // 
+            // bNetConnect
+            // 
+            this.bNetConnect.Location = new System.Drawing.Point(16, 79);
+            this.bNetConnect.Name = "bNetConnect";
+            this.bNetConnect.Size = new System.Drawing.Size(157, 54);
+            this.bNetConnect.TabIndex = 0;
+            this.bNetConnect.Text = "Connect";
+            this.bNetConnect.UseVisualStyleBackColor = true;
+            this.bNetConnect.Click += new System.EventHandler(this.bNetConnect_Click);
             // 
             // tabPage2
             // 
@@ -471,35 +505,24 @@
             this.openFileDialog1.FileName = "openFileDialog1";
             this.openFileDialog1.Filter = "|*dat";
             // 
-            // bUndo
+            // tbIpClient
             // 
-            this.bUndo.Location = new System.Drawing.Point(1161, 108);
-            this.bUndo.Name = "bUndo";
-            this.bUndo.Size = new System.Drawing.Size(184, 58);
-            this.bUndo.TabIndex = 56;
-            this.bUndo.Text = "Undo: 0";
-            this.bUndo.UseVisualStyleBackColor = true;
-            this.bUndo.Click += new System.EventHandler(this.bUndo_Click);
+            this.tbIpClient.Location = new System.Drawing.Point(16, 11);
+            this.tbIpClient.Name = "tbIpClient";
+            this.tbIpClient.Size = new System.Drawing.Size(208, 38);
+            this.tbIpClient.TabIndex = 1;
+            this.tbIpClient.Text = "192.168.0.100";
             // 
-            // bUndoClear
+            // bNetDisconnect
             // 
-            this.bUndoClear.Location = new System.Drawing.Point(1043, 111);
-            this.bUndoClear.Name = "bUndoClear";
-            this.bUndoClear.Size = new System.Drawing.Size(112, 55);
-            this.bUndoClear.TabIndex = 57;
-            this.bUndoClear.Text = "Clear";
-            this.bUndoClear.UseVisualStyleBackColor = true;
-            this.bUndoClear.Click += new System.EventHandler(this.bUndoClear_Click);
-            // 
-            // bNetConnect
-            // 
-            this.bNetConnect.Location = new System.Drawing.Point(16, 79);
-            this.bNetConnect.Name = "bNetConnect";
-            this.bNetConnect.Size = new System.Drawing.Size(157, 54);
-            this.bNetConnect.TabIndex = 0;
-            this.bNetConnect.Text = "Connect";
-            this.bNetConnect.UseVisualStyleBackColor = true;
-            this.bNetConnect.Click += new System.EventHandler(this.bNetConnect_Click);
+            this.bNetDisconnect.Enabled = false;
+            this.bNetDisconnect.Location = new System.Drawing.Point(179, 79);
+            this.bNetDisconnect.Name = "bNetDisconnect";
+            this.bNetDisconnect.Size = new System.Drawing.Size(222, 54);
+            this.bNetDisconnect.TabIndex = 2;
+            this.bNetDisconnect.Text = "Disconnect";
+            this.bNetDisconnect.UseVisualStyleBackColor = true;
+            this.bNetDisconnect.Click += new System.EventHandler(this.bNetDisconnect_Click_1);
             // 
             // Form1
             // 
@@ -512,13 +535,14 @@
             this.Margin = new System.Windows.Forms.Padding(5);
             this.Name = "Form1";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "Form1";
+            this.Text = "Serial OLED V12 23.10.20.25";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
             this.Shown += new System.EventHandler(this.Form1_Shown);
             this.panel2.ResumeLayout(false);
             this.panel2.PerformLayout();
             this.tabControl1.ResumeLayout(false);
             this.tabPage1.ResumeLayout(false);
+            this.tabPage1.PerformLayout();
             this.tabPage2.ResumeLayout(false);
             this.tabPage2.PerformLayout();
             this.panel4.ResumeLayout(false);
@@ -576,6 +600,8 @@
         private System.Windows.Forms.Button bUndo;
         private System.Windows.Forms.Button bUndoClear;
         private System.Windows.Forms.Button bNetConnect;
+        private System.Windows.Forms.TextBox tbIpClient;
+        private System.Windows.Forms.Button bNetDisconnect;
     }
 }
 

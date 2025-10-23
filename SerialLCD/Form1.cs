@@ -76,6 +76,7 @@ namespace SerialLCD
 
         SenderNet senderNet = SenderNet.Instance;
         private volatile bool _forceSendFlag = false; // Флаг для принудительной отправки
+        private volatile bool _autoReconnectEnabled = false; // Глобальный флаг автоматического переподключения
         
         /// <summary>
         /// Принудительная отправка данных на ESP32
@@ -83,6 +84,67 @@ namespace SerialLCD
         public void ForceSendToESP32()
         {
             _forceSendFlag = true;
+        }
+
+        /// <summary>
+        /// Валидация IP-адреса
+        /// </summary>
+        private bool IsValidIPAddress(string ip)
+        {
+            if (string.IsNullOrEmpty(ip))
+                return false;
+
+            string[] parts = ip.Split('.');
+            if (parts.Length != 4)
+                return false;
+
+            foreach (string part in parts)
+            {
+                if (!int.TryParse(part, out int num) || num < 0 || num > 255)
+                    return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Сохранение IP-адреса в настройки
+        /// </summary>
+        private void SaveIPAddress(string ip)
+        {
+            try
+            {
+                Properties.Settings.Default.LastIPAddress = ip;
+                Properties.Settings.Default.Save();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка при сохранении IP-адреса: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Загрузка IP-адреса из настроек
+        /// </summary>
+        private void LoadIPAddress()
+        {
+            try
+            {
+                string savedIP = Properties.Settings.Default.LastIPAddress;
+                if (!string.IsNullOrEmpty(savedIP) && IsValidIPAddress(savedIP))
+                {
+                    tbIpClient.Text = savedIP;
+                }
+                else
+                {
+                    tbIpClient.Text = "192.168.0.100"; // IP по умолчанию
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка при загрузке IP-адреса: {ex.Message}");
+                tbIpClient.Text = "192.168.0.100"; // IP по умолчанию
+            }
         }
 
 
@@ -145,6 +207,9 @@ namespace SerialLCD
             }
 
             if (listBox1.Items.Count > 0) listBox1.SetSelected(0, true);
+            
+            // Загружаем сохраненный IP-адрес
+            LoadIPAddress();
         }
         private async void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
@@ -640,8 +705,41 @@ namespace SerialLCD
 
         private void bNetConnect_Click(object sender, EventArgs e)
         {
-            senderNet.Configure("192.168.0.100", 81);
-            senderNet.Connect();
+            string ip = tbIpClient.Text.Trim();
+            
+            // Валидация IP-адреса
+            if (!IsValidIPAddress(ip))
+            {
+                MessageBox.Show("Неверный формат IP-адреса! Используйте формат: 192.168.1.100", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            
+            // Сохраняем IP-адрес в настройки
+            SaveIPAddress(ip);
+            
+            // Настраиваем и подключаемся
+            senderNet.Configure(ip, 81);
+            if (senderNet.Connect())
+            {
+                _autoReconnectEnabled = true; // Включаем автоматическое переподключение
+                //MessageBox.Show($"Успешно подключено к {ip}:81\nАвтоматическое переподключение включено", "Подключение", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                bNetDisconnect.Enabled = true;
+                bNetConnect.Enabled = false;
+            }
+            else
+            {
+                _autoReconnectEnabled = false; // Отключаем при неудаче
+                MessageBox.Show($"Не удалось подключиться к {ip}:81", "Ошибка подключения", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void bNetDisconnect_Click_1(object sender, EventArgs e)
+        {
+            _autoReconnectEnabled = false; // Отключаем автоматическое переподключение
+            senderNet.Disconnect();
+            bNetConnect.Enabled = true;
+            bNetDisconnect.Enabled = false;
+            //MessageBox.Show("Отключено от ESP32\nАвтоматическое переподключение отключено", "Отключение", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private async Task RenderAsync(CancellationToken token)
@@ -809,14 +907,43 @@ namespace SerialLCD
             {
                 try
                 {
-                    // Если нет соединения, пытаемся подключиться
+                    // Если нет соединения, проверяем режим работы
                     if (!senderNet.IsConnected)
                     {
-                        Console.WriteLine("Нет соединения с ESP32, пытаемся подключиться...");
-                        senderNet.Configure("192.168.0.100", 81);
-                        if (!senderNet.Connect())
+                        if (_autoReconnectEnabled)
                         {
-                            await Task.Delay(1000, token); // Уменьшаем задержку при отсутствии соединения
+                            // Автоматическое переподключение включено - пытаемся переподключиться
+                            Console.WriteLine("Соединение разорвано, пытаемся переподключиться автоматически...");
+                            if (!senderNet.IsConnected) // Дополнительная проверка
+                            {
+                                // Получаем сохраненный IP из настроек
+                                string savedIP = Properties.Settings.Default.LastIPAddress;
+                                if (!string.IsNullOrEmpty(savedIP) && IsValidIPAddress(savedIP))
+                                {
+                                    senderNet.Configure(savedIP, 81);
+                                    if (senderNet.Connect())
+                                    {
+                                        Console.WriteLine($"Автоматически переподключились к {savedIP}:81");
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine("Не удалось автоматически переподключиться");
+                                        await Task.Delay(2000, token);
+                                        continue;
+                                    }
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Нет сохраненного IP-адреса для автоматического переподключения");
+                                    await Task.Delay(2000, token);
+                                    continue;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // Автоматическое переподключение отключено - ждем подключения пользователем
+                            await Task.Delay(2000, token);
                             continue;
                         }
                     }
