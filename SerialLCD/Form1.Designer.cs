@@ -66,8 +66,12 @@
             this.kryptonManager1 = new ComponentFactory.Krypton.Toolkit.KryptonManager(this.components);
             this.saveFileDialog1 = new System.Windows.Forms.SaveFileDialog();
             this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
+            this.bUndo = new System.Windows.Forms.Button();
+            this.bUndoClear = new System.Windows.Forms.Button();
+            this.bNetConnect = new System.Windows.Forms.Button();
             this.panel2.SuspendLayout();
             this.tabControl1.SuspendLayout();
+            this.tabPage1.SuspendLayout();
             this.tabPage2.SuspendLayout();
             this.panel4.SuspendLayout();
             this.panel3.SuspendLayout();
@@ -156,6 +160,8 @@
             // 
             this.panel2.AutoSize = true;
             this.panel2.BackColor = System.Drawing.SystemColors.ButtonFace;
+            this.panel2.Controls.Add(this.bUndoClear);
+            this.panel2.Controls.Add(this.bUndo);
             this.panel2.Controls.Add(this.tabControl1);
             this.panel2.Controls.Add(this.panel4);
             this.panel2.Controls.Add(this.panel3);
@@ -184,6 +190,7 @@
             // 
             // tabPage1
             // 
+            this.tabPage1.Controls.Add(this.bNetConnect);
             this.tabPage1.Location = new System.Drawing.Point(10, 48);
             this.tabPage1.Name = "tabPage1";
             this.tabPage1.Padding = new System.Windows.Forms.Padding(3);
@@ -464,6 +471,36 @@
             this.openFileDialog1.FileName = "openFileDialog1";
             this.openFileDialog1.Filter = "|*dat";
             // 
+            // bUndo
+            // 
+            this.bUndo.Location = new System.Drawing.Point(1161, 108);
+            this.bUndo.Name = "bUndo";
+            this.bUndo.Size = new System.Drawing.Size(184, 58);
+            this.bUndo.TabIndex = 56;
+            this.bUndo.Text = "Undo: 0";
+            this.bUndo.UseVisualStyleBackColor = true;
+            this.bUndo.Click += new System.EventHandler(this.bUndo_Click);
+            // 
+            // bUndoClear
+            // 
+            this.bUndoClear.Location = new System.Drawing.Point(1043, 111);
+            this.bUndoClear.Name = "bUndoClear";
+            this.bUndoClear.Size = new System.Drawing.Size(112, 55);
+            this.bUndoClear.TabIndex = 57;
+            this.bUndoClear.Text = "Clear";
+            this.bUndoClear.UseVisualStyleBackColor = true;
+            this.bUndoClear.Click += new System.EventHandler(this.bUndoClear_Click);
+            // 
+            // bNetConnect
+            // 
+            this.bNetConnect.Location = new System.Drawing.Point(16, 79);
+            this.bNetConnect.Name = "bNetConnect";
+            this.bNetConnect.Size = new System.Drawing.Size(157, 54);
+            this.bNetConnect.TabIndex = 0;
+            this.bNetConnect.Text = "Connect";
+            this.bNetConnect.UseVisualStyleBackColor = true;
+            this.bNetConnect.Click += new System.EventHandler(this.bNetConnect_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(16F, 31F);
@@ -481,6 +518,7 @@
             this.panel2.ResumeLayout(false);
             this.panel2.PerformLayout();
             this.tabControl1.ResumeLayout(false);
+            this.tabPage1.ResumeLayout(false);
             this.tabPage2.ResumeLayout(false);
             this.tabPage2.PerformLayout();
             this.panel4.ResumeLayout(false);
@@ -535,6 +573,9 @@
         private System.Windows.Forms.TabControl tabControl1;
         private System.Windows.Forms.TabPage tabPage1;
         private System.Windows.Forms.TabPage tabPage2;
+        private System.Windows.Forms.Button bUndo;
+        private System.Windows.Forms.Button bUndoClear;
+        private System.Windows.Forms.Button bNetConnect;
     }
 }
 

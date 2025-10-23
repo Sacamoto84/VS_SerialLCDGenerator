@@ -35,6 +35,7 @@ namespace SerialLCD
 
         private Task Proceso1;
         private Task tSendToSTM32;
+        private Task tSendToESP32;
 
 
         const int scale = 8;
@@ -72,9 +73,18 @@ namespace SerialLCD
         private CancellationTokenSource cts = new CancellationTokenSource();
 
 
+
+        SenderNet senderNet = SenderNet.Instance;
+
+
+
+
+
         void lifoPush()
         {
             lifoBuffer.Push(fbMain);
+            int capacity = lifoBuffer.Count;
+            bUndo.Text = "Undo: " + capacity;
         }
 
         void lifoPop()
@@ -85,11 +95,15 @@ namespace SerialLCD
             {
                 fbMain = temp;
             }
+            int capacity = lifoBuffer.Count;
+            bUndo.Text = "Undo: " + capacity;
         }
 
         void lifoClear()
         {
             lifoBuffer.Clear();
+            int capacity = lifoBuffer.Count;
+            bUndo.Text = "Undo: " + capacity;
         }
 
 
@@ -106,6 +120,7 @@ namespace SerialLCD
 
             Proceso1 = Task.Run(() => RenderAsync(cts.Token), cts.Token);
             tSendToSTM32 = Task.Run(() => SendToSTM32Async(cts.Token), cts.Token);
+            tSendToESP32 = Task.Run(() => SendToESP32Async(cts.Token), cts.Token);
 
             contur = new _contur { x1 = 0, y1 = 0, x2 = 1, y2 = 1, w = 1, h = 1, enable = false, visible = false, state = 0 };
 
@@ -325,10 +340,10 @@ namespace SerialLCD
 
             if (e.Button == MouseButtons.Right)
             {
-                lifoPush();
                 fbMain[mouse_x, mouse_y] = 0x0000;
             }
 
+        
             //if (e.Button == MouseButtons.Left || e.Button == MouseButtons.Right || ModeLine != NONE)
             //    fbMainChanged = true; // Отмечаем изменение при рисовании линий или пикселей
 
@@ -404,11 +419,13 @@ namespace SerialLCD
                     {
                         lifoPush();
                         LineV(fbMain, (short)mouse_x, 0, 64, 0xFFFF);
+                        return;
                     }
                     if (e.Button == MouseButtons.Right)
                     {
                         lifoPush();
                         LineV(fbMain, (short)mouse_x, 0, 64, 0);
+                        return;
                     }
                 }
 
@@ -418,11 +435,13 @@ namespace SerialLCD
                     {
                         lifoPush();
                         LineH(fbMain, (short)mouse_y, 0, 128, 0xFFFF);
+                        return;
                     }
                     if (e.Button == MouseButtons.Right)
                     {
                         lifoPush();
                         LineH(fbMain, (short)mouse_y, 0, 128, 0);
+                        return;
                     }
                 }
 
@@ -430,13 +449,23 @@ namespace SerialLCD
                 {
                     lifoPush();
                     fbMain[mouse_x, mouse_y] = 0xFFFF;
+                    return;
                 }
 
                 if (e.Button == MouseButtons.Right)
                 {
                     lifoPush();
                     fbMain[mouse_x, mouse_y] = 0;
+                    return;
                 }
+
+                if (e.Button == MouseButtons.Middle)
+                {
+                    lifoPop();
+                    return;
+                }
+
+              
             }
         }
         #endregion
@@ -573,12 +602,28 @@ namespace SerialLCD
             if (listBox1.Items.Count > 0) listBox1.SetSelected(0, true);
         }
 
-  
+        private void bUndo_Click(object sender, EventArgs e)
+        {
+            lifoPop();
+            int capacity = lifoBuffer.Count;
+            bUndo.Text = "Undo: "+capacity;
+        }
+
+        private void bUndoClear_Click(object sender, EventArgs e)
+        {
+            lifoClear();
+        }
 
         #endregion
 
         #region Потоки отрисовки и отсылки
         byte[] serial_transmit_buffer = new byte[1024];
+
+        private void bNetConnect_Click(object sender, EventArgs e)
+        {
+            senderNet.Configure("192.168.0.100", 81);
+            senderNet.Connect();
+        }
 
         private async Task RenderAsync(CancellationToken token)
         {
@@ -733,6 +778,78 @@ namespace SerialLCD
                 await Task.Delay(100, token);
             }
         }
+
+        private async Task SendToESP32Async(CancellationToken token)
+        {
+            while (!token.IsCancellationRequested)
+            {
+                try
+                {
+
+                    if (!senderNet.IsConnected)
+                    {
+                        await Task.Delay(1000, token);
+                        continue;
+                    }
+
+                    for (int x1 = 0; x1 < 128; x1++)
+                        for (int y1 = 0; y1 < 64; y1++)
+                        {
+                            if (fbMain[x1, y1] == 0)
+                                serial_transmit_buffer[x1 + (y1 / 8) * 128] &= (byte)(~(1 << (y1 % 8)));
+                            else
+                                serial_transmit_buffer[x1 + (y1 / 8) * 128] |= (byte)(1 << (y1 % 8));
+                        }
+                    if (senderNet.IsConnected)
+                        senderNet.SendByteArray(serial_transmit_buffer);
+
+                }
+                catch (Exception ex)
+                {
+                    if (!token.IsCancellationRequested)
+                    {
+                        Invoke((MethodInvoker)delegate
+                        {
+                            MessageBox.Show($"Ошибка при отправке данных: {ex.Message}");
+                        });
+                        await Task.Delay(1000, token);
+                    }
+                }
+                await Task.Delay(100, token);
+            }
+        }
+
+
+
+
+
+
+
+
+
+
+        //public void SendToESP32()
+        //{
+
+        //    while (true)
+        //    {
+        //        for (int x1 = 0; x1 < 128; x1++)
+        //            for (int y1 = 0; y1 < 64; y1++)
+        //            {
+        //                if (fbMain[x1, y1] == 0)
+        //                    serial_transmit_buffer[x1 + (y1 / 8) * 128] &= (byte)(~(1 << (y1 % 8)));
+        //                else
+        //                    serial_transmit_buffer[x1 + (y1 / 8) * 128] |= (byte)(1 << (y1 % 8));
+        //            }
+
+        //        senderNet.SendByteArray(serial_transmit_buffer);
+        //        Thread.Sleep(100);
+        //    }
+
+
+        //}
+
+
         #endregion
 
     }
