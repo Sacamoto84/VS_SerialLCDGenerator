@@ -54,6 +54,8 @@ namespace SerialLCD
 
         public ushort[,] frameBufferRender = new ushort[128, 64];
 
+        private LifoBuffer lifoBuffer = new LifoBuffer(128, 64); // Новый буфер
+
         public _contur contur;
 
         byte LCD_W = 128;
@@ -68,6 +70,27 @@ namespace SerialLCD
         int window_H = 16, window_W = 16, window_Visible = 0;
 
         private CancellationTokenSource cts = new CancellationTokenSource();
+
+
+        void lifoPush()
+        {
+            lifoBuffer.Push(fbMain);
+        }
+
+        void lifoPop()
+        {
+            ushort[,] temp = new ushort[128, 64];
+            bool res = lifoBuffer.Pop(temp);
+            if (res)
+            {
+                fbMain = temp;
+            }
+        }
+
+        void lifoClear()
+        {
+            lifoBuffer.Clear();
+        }
 
 
         #region Не менять
@@ -294,6 +317,7 @@ namespace SerialLCD
             //if (e.Button == MouseButtons.Left || e.Button == MouseButtons.Right)
             //    fbMainChanged = true; // Отмечаем изменение
 
+
             if (e.Button == MouseButtons.Left)
             {
                 fbMain[mouse_x, mouse_y] = 0xFFFF;
@@ -301,6 +325,7 @@ namespace SerialLCD
 
             if (e.Button == MouseButtons.Right)
             {
+                lifoPush();
                 fbMain[mouse_x, mouse_y] = 0x0000;
             }
 
@@ -310,6 +335,7 @@ namespace SerialLCD
         }
         private void pictureBox1_MouseDown(object sender, MouseEventArgs e)
         {
+
             mouse_x = e.Location.X / scale;
             mouse_y = e.Location.Y / scale;
 
@@ -375,24 +401,42 @@ namespace SerialLCD
                 if (ModeLine == VLINE)
                 {
                     if (e.Button == MouseButtons.Left)
+                    {
+                        lifoPush();
                         LineV(fbMain, (short)mouse_x, 0, 64, 0xFFFF);
+                    }
                     if (e.Button == MouseButtons.Right)
+                    {
+                        lifoPush();
                         LineV(fbMain, (short)mouse_x, 0, 64, 0);
+                    }
                 }
 
                 if (ModeLine == HLINE)
                 {
                     if (e.Button == MouseButtons.Left)
+                    {
+                        lifoPush();
                         LineH(fbMain, (short)mouse_y, 0, 128, 0xFFFF);
+                    }
                     if (e.Button == MouseButtons.Right)
+                    {
+                        lifoPush();
                         LineH(fbMain, (short)mouse_y, 0, 128, 0);
+                    }
                 }
 
                 if (e.Button == MouseButtons.Left)
+                {
+                    lifoPush();
                     fbMain[mouse_x, mouse_y] = 0xFFFF;
+                }
 
                 if (e.Button == MouseButtons.Right)
+                {
+                    lifoPush();
                     fbMain[mouse_x, mouse_y] = 0;
+                }
             }
         }
         #endregion
@@ -432,6 +476,8 @@ namespace SerialLCD
 
         private void bFastLoad_Click(object sender, EventArgs e)
         {
+            lifoPush();
+
             string path = @"fast.dat";
 
             if (File.Exists(path))
@@ -468,6 +514,8 @@ namespace SerialLCD
 
         private void bLoad_Click(object sender, EventArgs e)
         {
+            lifoPush();
+
             var fileContent = string.Empty;
             var filePath = string.Empty;
 
@@ -525,10 +573,7 @@ namespace SerialLCD
             if (listBox1.Items.Count > 0) listBox1.SetSelected(0, true);
         }
 
-        private void label6_Click(object sender, EventArgs e)
-        {
-
-        }
+  
 
         #endregion
 

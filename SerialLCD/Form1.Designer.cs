@@ -37,45 +37,45 @@
             this.label3 = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
             this.panel2 = new System.Windows.Forms.Panel();
-            this.label1 = new System.Windows.Forms.Label();
-            this.bFastSave = new System.Windows.Forms.Button();
-            this.bFastLoad = new System.Windows.Forms.Button();
-            this.bSave = new System.Windows.Forms.Button();
+            this.tabControl1 = new System.Windows.Forms.TabControl();
+            this.tabPage1 = new System.Windows.Forms.TabPage();
+            this.tabPage2 = new System.Windows.Forms.TabPage();
+            this.panel4 = new System.Windows.Forms.Panel();
+            this.bMeasureSet = new System.Windows.Forms.Button();
+            this.edit_windowW = new Iocomp.Instrumentation.Standard.EditInteger();
+            this.label5 = new System.Windows.Forms.Label();
+            this.edit_windowH = new Iocomp.Instrumentation.Standard.EditInteger();
+            this.bMeasureClear = new System.Windows.Forms.Button();
+            this.label6 = new System.Windows.Forms.Label();
+            this.panel3 = new System.Windows.Forms.Panel();
+            this.bClear = new System.Windows.Forms.Button();
             this.bLoad = new System.Windows.Forms.Button();
+            this.bFastSave = new System.Windows.Forms.Button();
+            this.bSave = new System.Windows.Forms.Button();
+            this.bFastLoad = new System.Windows.Forms.Button();
+            this.label1 = new System.Windows.Forms.Label();
             this.cbHLine = new ComponentFactory.Krypton.Toolkit.KryptonCheckButton();
             this.kryptonPanel1 = new ComponentFactory.Krypton.Toolkit.KryptonPanel();
             this.bMassiv = new System.Windows.Forms.Button();
             this.listBox2 = new System.Windows.Forms.ListBox();
             this.cbVidelenie = new ComponentFactory.Krypton.Toolkit.KryptonCheckButton();
             this.cbVLine = new ComponentFactory.Krypton.Toolkit.KryptonCheckButton();
-            this.bMeasureClear = new System.Windows.Forms.Button();
-            this.edit_windowH = new Iocomp.Instrumentation.Standard.EditInteger();
-            this.edit_windowW = new Iocomp.Instrumentation.Standard.EditInteger();
-            this.label6 = new System.Windows.Forms.Label();
-            this.label5 = new System.Windows.Forms.Label();
-            this.bMeasureSet = new System.Windows.Forms.Button();
-            this.bClear = new System.Windows.Forms.Button();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.panel1 = new System.Windows.Forms.Panel();
             this.kryptonCheckSet1 = new ComponentFactory.Krypton.Toolkit.KryptonCheckSet(this.components);
             this.kryptonManager1 = new ComponentFactory.Krypton.Toolkit.KryptonManager(this.components);
             this.saveFileDialog1 = new System.Windows.Forms.SaveFileDialog();
             this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
-            this.panel3 = new System.Windows.Forms.Panel();
-            this.panel4 = new System.Windows.Forms.Panel();
-            this.tabControl1 = new System.Windows.Forms.TabControl();
-            this.tabPage1 = new System.Windows.Forms.TabPage();
-            this.tabPage2 = new System.Windows.Forms.TabPage();
             this.panel2.SuspendLayout();
+            this.tabControl1.SuspendLayout();
+            this.tabPage2.SuspendLayout();
+            this.panel4.SuspendLayout();
+            this.panel3.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.kryptonPanel1)).BeginInit();
             this.kryptonPanel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.kryptonCheckSet1)).BeginInit();
-            this.panel3.SuspendLayout();
-            this.panel4.SuspendLayout();
-            this.tabControl1.SuspendLayout();
-            this.tabPage2.SuspendLayout();
             this.SuspendLayout();
             // 
             // listBox1
@@ -168,18 +168,157 @@
             this.panel2.Dock = System.Windows.Forms.DockStyle.Top;
             this.panel2.Location = new System.Drawing.Point(0, 0);
             this.panel2.Name = "panel2";
-            this.panel2.Size = new System.Drawing.Size(2733, 222);
+            this.panel2.Padding = new System.Windows.Forms.Padding(0, 0, 0, 8);
+            this.panel2.Size = new System.Drawing.Size(2733, 230);
             this.panel2.TabIndex = 22;
             // 
-            // label1
+            // tabControl1
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(2145, 28);
-            this.label1.Margin = new System.Windows.Forms.Padding(5, 0, 5, 0);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(92, 32);
-            this.label1.TabIndex = 51;
-            this.label1.Text = "label1";
+            this.tabControl1.Controls.Add(this.tabPage1);
+            this.tabControl1.Controls.Add(this.tabPage2);
+            this.tabControl1.Location = new System.Drawing.Point(12, 12);
+            this.tabControl1.Name = "tabControl1";
+            this.tabControl1.SelectedIndex = 0;
+            this.tabControl1.Size = new System.Drawing.Size(662, 207);
+            this.tabControl1.TabIndex = 55;
+            // 
+            // tabPage1
+            // 
+            this.tabPage1.Location = new System.Drawing.Point(10, 48);
+            this.tabPage1.Name = "tabPage1";
+            this.tabPage1.Padding = new System.Windows.Forms.Padding(3);
+            this.tabPage1.Size = new System.Drawing.Size(642, 149);
+            this.tabPage1.TabIndex = 0;
+            this.tabPage1.Text = "Сеть";
+            this.tabPage1.UseVisualStyleBackColor = true;
+            // 
+            // tabPage2
+            // 
+            this.tabPage2.Controls.Add(this.CLOSE);
+            this.tabPage2.Controls.Add(this.OPEN);
+            this.tabPage2.Controls.Add(this.listBox1);
+            this.tabPage2.Controls.Add(this.label2);
+            this.tabPage2.Location = new System.Drawing.Point(10, 48);
+            this.tabPage2.Name = "tabPage2";
+            this.tabPage2.Padding = new System.Windows.Forms.Padding(3);
+            this.tabPage2.Size = new System.Drawing.Size(642, 149);
+            this.tabPage2.TabIndex = 1;
+            this.tabPage2.Text = "COM";
+            this.tabPage2.UseVisualStyleBackColor = true;
+            // 
+            // panel4
+            // 
+            this.panel4.Controls.Add(this.bMeasureSet);
+            this.panel4.Controls.Add(this.edit_windowW);
+            this.panel4.Controls.Add(this.label5);
+            this.panel4.Controls.Add(this.edit_windowH);
+            this.panel4.Controls.Add(this.bMeasureClear);
+            this.panel4.Controls.Add(this.label6);
+            this.panel4.Location = new System.Drawing.Point(1784, 21);
+            this.panel4.Name = "panel4";
+            this.panel4.Size = new System.Drawing.Size(252, 120);
+            this.panel4.TabIndex = 53;
+            // 
+            // bMeasureSet
+            // 
+            this.bMeasureSet.Location = new System.Drawing.Point(139, 5);
+            this.bMeasureSet.Margin = new System.Windows.Forms.Padding(5, 7, 5, 7);
+            this.bMeasureSet.Name = "bMeasureSet";
+            this.bMeasureSet.Size = new System.Drawing.Size(109, 50);
+            this.bMeasureSet.TabIndex = 33;
+            this.bMeasureSet.Text = "Set";
+            this.bMeasureSet.UseVisualStyleBackColor = true;
+            this.bMeasureSet.Click += new System.EventHandler(this.bMeasureSet_Click);
+            // 
+            // edit_windowW
+            // 
+            this.edit_windowW.LoadingBegin();
+            this.edit_windowW.Location = new System.Drawing.Point(55, 7);
+            this.edit_windowW.Margin = new System.Windows.Forms.Padding(5, 7, 5, 7);
+            this.edit_windowW.MaxLength = 128;
+            this.edit_windowW.Name = "edit_windowW";
+            this.edit_windowW.Size = new System.Drawing.Size(74, 38);
+            this.edit_windowW.TabIndex = 38;
+            this.edit_windowW.Value.AsString = "16";
+            this.edit_windowW.LoadingEnd();
+            // 
+            // label5
+            // 
+            this.label5.AutoSize = true;
+            this.label5.Location = new System.Drawing.Point(5, 7);
+            this.label5.Margin = new System.Windows.Forms.Padding(5, 0, 5, 0);
+            this.label5.Name = "label5";
+            this.label5.Size = new System.Drawing.Size(40, 32);
+            this.label5.TabIndex = 34;
+            this.label5.Text = "W";
+            // 
+            // edit_windowH
+            // 
+            this.edit_windowH.LoadingBegin();
+            this.edit_windowH.Location = new System.Drawing.Point(55, 50);
+            this.edit_windowH.Margin = new System.Windows.Forms.Padding(5, 7, 5, 7);
+            this.edit_windowH.MaxLength = 64;
+            this.edit_windowH.Name = "edit_windowH";
+            this.edit_windowH.Size = new System.Drawing.Size(74, 38);
+            this.edit_windowH.TabIndex = 39;
+            this.edit_windowH.Value.AsString = "16";
+            this.edit_windowH.LoadingEnd();
+            // 
+            // bMeasureClear
+            // 
+            this.bMeasureClear.Location = new System.Drawing.Point(139, 63);
+            this.bMeasureClear.Margin = new System.Windows.Forms.Padding(5, 7, 5, 7);
+            this.bMeasureClear.Name = "bMeasureClear";
+            this.bMeasureClear.Size = new System.Drawing.Size(109, 50);
+            this.bMeasureClear.TabIndex = 40;
+            this.bMeasureClear.Text = "Clr";
+            this.bMeasureClear.UseVisualStyleBackColor = true;
+            this.bMeasureClear.Click += new System.EventHandler(this.bMeasureClear_Click);
+            // 
+            // label6
+            // 
+            this.label6.AutoSize = true;
+            this.label6.Location = new System.Drawing.Point(9, 50);
+            this.label6.Margin = new System.Windows.Forms.Padding(5, 0, 5, 0);
+            this.label6.Name = "label6";
+            this.label6.Size = new System.Drawing.Size(34, 32);
+            this.label6.TabIndex = 35;
+            this.label6.Text = "H";
+            // 
+            // panel3
+            // 
+            this.panel3.Controls.Add(this.bClear);
+            this.panel3.Controls.Add(this.bLoad);
+            this.panel3.Controls.Add(this.bFastSave);
+            this.panel3.Controls.Add(this.bSave);
+            this.panel3.Controls.Add(this.bFastLoad);
+            this.panel3.Location = new System.Drawing.Point(689, 12);
+            this.panel3.Name = "panel3";
+            this.panel3.Size = new System.Drawing.Size(656, 80);
+            this.panel3.TabIndex = 52;
+            // 
+            // bClear
+            // 
+            this.bClear.Location = new System.Drawing.Point(5, 7);
+            this.bClear.Margin = new System.Windows.Forms.Padding(5, 7, 5, 7);
+            this.bClear.Name = "bClear";
+            this.bClear.Size = new System.Drawing.Size(120, 64);
+            this.bClear.TabIndex = 25;
+            this.bClear.Text = "Clear";
+            this.bClear.UseVisualStyleBackColor = true;
+            this.bClear.Click += new System.EventHandler(this.bClear_Click);
+            // 
+            // bLoad
+            // 
+            this.bLoad.Font = new System.Drawing.Font("Consolas", 8.1F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.bLoad.Location = new System.Drawing.Point(135, 7);
+            this.bLoad.Margin = new System.Windows.Forms.Padding(5);
+            this.bLoad.Name = "bLoad";
+            this.bLoad.Size = new System.Drawing.Size(120, 64);
+            this.bLoad.TabIndex = 46;
+            this.bLoad.Text = "Load";
+            this.bLoad.UseVisualStyleBackColor = true;
+            this.bLoad.Click += new System.EventHandler(this.bLoad_Click);
             // 
             // bFastSave
             // 
@@ -193,18 +332,6 @@
             this.bFastSave.UseVisualStyleBackColor = true;
             this.bFastSave.Click += new System.EventHandler(this.bFastSave_Click);
             // 
-            // bFastLoad
-            // 
-            this.bFastLoad.Font = new System.Drawing.Font("Consolas", 8.1F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.bFastLoad.Location = new System.Drawing.Point(395, 7);
-            this.bFastLoad.Margin = new System.Windows.Forms.Padding(5);
-            this.bFastLoad.Name = "bFastLoad";
-            this.bFastLoad.Size = new System.Drawing.Size(120, 64);
-            this.bFastLoad.TabIndex = 48;
-            this.bFastLoad.Text = "FLoad";
-            this.bFastLoad.UseVisualStyleBackColor = true;
-            this.bFastLoad.Click += new System.EventHandler(this.bFastLoad_Click);
-            // 
             // bSave
             // 
             this.bSave.Font = new System.Drawing.Font("Consolas", 8.1F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
@@ -217,17 +344,27 @@
             this.bSave.UseVisualStyleBackColor = true;
             this.bSave.Click += new System.EventHandler(this.bSave_Click);
             // 
-            // bLoad
+            // bFastLoad
             // 
-            this.bLoad.Font = new System.Drawing.Font("Consolas", 8.1F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.bLoad.Location = new System.Drawing.Point(135, 7);
-            this.bLoad.Margin = new System.Windows.Forms.Padding(5);
-            this.bLoad.Name = "bLoad";
-            this.bLoad.Size = new System.Drawing.Size(120, 64);
-            this.bLoad.TabIndex = 46;
-            this.bLoad.Text = "Load";
-            this.bLoad.UseVisualStyleBackColor = true;
-            this.bLoad.Click += new System.EventHandler(this.bLoad_Click);
+            this.bFastLoad.Font = new System.Drawing.Font("Consolas", 8.1F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.bFastLoad.Location = new System.Drawing.Point(395, 7);
+            this.bFastLoad.Margin = new System.Windows.Forms.Padding(5);
+            this.bFastLoad.Name = "bFastLoad";
+            this.bFastLoad.Size = new System.Drawing.Size(120, 64);
+            this.bFastLoad.TabIndex = 48;
+            this.bFastLoad.Text = "FLoad";
+            this.bFastLoad.UseVisualStyleBackColor = true;
+            this.bFastLoad.Click += new System.EventHandler(this.bFastLoad_Click);
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(2514, 26);
+            this.label1.Margin = new System.Windows.Forms.Padding(5, 0, 5, 0);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(92, 32);
+            this.label1.TabIndex = 51;
+            this.label1.Text = "label1";
             // 
             // cbHLine
             // 
@@ -293,84 +430,6 @@
             this.cbVLine.Values.Text = "V Line";
             this.cbVLine.Click += new System.EventHandler(this.cbVLine_Click);
             // 
-            // bMeasureClear
-            // 
-            this.bMeasureClear.Location = new System.Drawing.Point(139, 50);
-            this.bMeasureClear.Margin = new System.Windows.Forms.Padding(5, 7, 5, 7);
-            this.bMeasureClear.Name = "bMeasureClear";
-            this.bMeasureClear.Size = new System.Drawing.Size(109, 40);
-            this.bMeasureClear.TabIndex = 40;
-            this.bMeasureClear.Text = "Clr";
-            this.bMeasureClear.UseVisualStyleBackColor = true;
-            this.bMeasureClear.Click += new System.EventHandler(this.bMeasureClear_Click);
-            // 
-            // edit_windowH
-            // 
-            this.edit_windowH.LoadingBegin();
-            this.edit_windowH.Location = new System.Drawing.Point(55, 50);
-            this.edit_windowH.Margin = new System.Windows.Forms.Padding(5, 7, 5, 7);
-            this.edit_windowH.MaxLength = 64;
-            this.edit_windowH.Name = "edit_windowH";
-            this.edit_windowH.Size = new System.Drawing.Size(74, 38);
-            this.edit_windowH.TabIndex = 39;
-            this.edit_windowH.Value.AsString = "16";
-            this.edit_windowH.LoadingEnd();
-            // 
-            // edit_windowW
-            // 
-            this.edit_windowW.LoadingBegin();
-            this.edit_windowW.Location = new System.Drawing.Point(55, 7);
-            this.edit_windowW.Margin = new System.Windows.Forms.Padding(5, 7, 5, 7);
-            this.edit_windowW.MaxLength = 128;
-            this.edit_windowW.Name = "edit_windowW";
-            this.edit_windowW.Size = new System.Drawing.Size(74, 38);
-            this.edit_windowW.TabIndex = 38;
-            this.edit_windowW.Value.AsString = "16";
-            this.edit_windowW.LoadingEnd();
-            // 
-            // label6
-            // 
-            this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(5, 50);
-            this.label6.Margin = new System.Windows.Forms.Padding(5, 0, 5, 0);
-            this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(34, 32);
-            this.label6.TabIndex = 35;
-            this.label6.Text = "H";
-            this.label6.Click += new System.EventHandler(this.label6_Click);
-            // 
-            // label5
-            // 
-            this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(5, 7);
-            this.label5.Margin = new System.Windows.Forms.Padding(5, 0, 5, 0);
-            this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(40, 32);
-            this.label5.TabIndex = 34;
-            this.label5.Text = "W";
-            // 
-            // bMeasureSet
-            // 
-            this.bMeasureSet.Location = new System.Drawing.Point(139, 7);
-            this.bMeasureSet.Margin = new System.Windows.Forms.Padding(5, 7, 5, 7);
-            this.bMeasureSet.Name = "bMeasureSet";
-            this.bMeasureSet.Size = new System.Drawing.Size(109, 40);
-            this.bMeasureSet.TabIndex = 33;
-            this.bMeasureSet.Text = "Set";
-            this.bMeasureSet.UseVisualStyleBackColor = true;
-            this.bMeasureSet.Click += new System.EventHandler(this.bMeasureSet_Click);
-            // 
-            // bClear
-            // 
-            this.bClear.Location = new System.Drawing.Point(5, 7);
-            this.bClear.Margin = new System.Windows.Forms.Padding(5, 7, 5, 7);
-            this.bClear.Name = "bClear";
-            this.bClear.Size = new System.Drawing.Size(120, 64);
-            this.bClear.TabIndex = 25;
-            this.bClear.Text = "Clear";
-            this.bClear.UseVisualStyleBackColor = true;
-            this.bClear.Click += new System.EventHandler(this.bClear_Click);
-            // 
             // pictureBox1
             // 
             this.pictureBox1.BackColor = System.Drawing.SystemColors.ActiveCaption;
@@ -389,9 +448,9 @@
             this.panel1.AutoSize = true;
             this.panel1.Controls.Add(this.pictureBox1);
             this.panel1.Dock = System.Windows.Forms.DockStyle.Left;
-            this.panel1.Location = new System.Drawing.Point(0, 222);
+            this.panel1.Location = new System.Drawing.Point(0, 230);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(795, 1227);
+            this.panel1.Size = new System.Drawing.Size(795, 1219);
             this.panel1.TabIndex = 21;
             // 
             // kryptonCheckSet1
@@ -404,65 +463,6 @@
             // 
             this.openFileDialog1.FileName = "openFileDialog1";
             this.openFileDialog1.Filter = "|*dat";
-            // 
-            // panel3
-            // 
-            this.panel3.Controls.Add(this.bClear);
-            this.panel3.Controls.Add(this.bLoad);
-            this.panel3.Controls.Add(this.bFastSave);
-            this.panel3.Controls.Add(this.bSave);
-            this.panel3.Controls.Add(this.bFastLoad);
-            this.panel3.Location = new System.Drawing.Point(689, 12);
-            this.panel3.Name = "panel3";
-            this.panel3.Size = new System.Drawing.Size(656, 80);
-            this.panel3.TabIndex = 52;
-            // 
-            // panel4
-            // 
-            this.panel4.Controls.Add(this.bMeasureSet);
-            this.panel4.Controls.Add(this.edit_windowW);
-            this.panel4.Controls.Add(this.label5);
-            this.panel4.Controls.Add(this.edit_windowH);
-            this.panel4.Controls.Add(this.bMeasureClear);
-            this.panel4.Controls.Add(this.label6);
-            this.panel4.Location = new System.Drawing.Point(1784, 21);
-            this.panel4.Name = "panel4";
-            this.panel4.Size = new System.Drawing.Size(317, 111);
-            this.panel4.TabIndex = 53;
-            // 
-            // tabControl1
-            // 
-            this.tabControl1.Controls.Add(this.tabPage1);
-            this.tabControl1.Controls.Add(this.tabPage2);
-            this.tabControl1.Location = new System.Drawing.Point(12, 12);
-            this.tabControl1.Name = "tabControl1";
-            this.tabControl1.SelectedIndex = 0;
-            this.tabControl1.Size = new System.Drawing.Size(662, 207);
-            this.tabControl1.TabIndex = 55;
-            // 
-            // tabPage1
-            // 
-            this.tabPage1.Location = new System.Drawing.Point(10, 48);
-            this.tabPage1.Name = "tabPage1";
-            this.tabPage1.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage1.Size = new System.Drawing.Size(642, 149);
-            this.tabPage1.TabIndex = 0;
-            this.tabPage1.Text = "Сеть";
-            this.tabPage1.UseVisualStyleBackColor = true;
-            // 
-            // tabPage2
-            // 
-            this.tabPage2.Controls.Add(this.CLOSE);
-            this.tabPage2.Controls.Add(this.OPEN);
-            this.tabPage2.Controls.Add(this.listBox1);
-            this.tabPage2.Controls.Add(this.label2);
-            this.tabPage2.Location = new System.Drawing.Point(10, 48);
-            this.tabPage2.Name = "tabPage2";
-            this.tabPage2.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage2.Size = new System.Drawing.Size(642, 149);
-            this.tabPage2.TabIndex = 1;
-            this.tabPage2.Text = "COM";
-            this.tabPage2.UseVisualStyleBackColor = true;
             // 
             // Form1
             // 
@@ -480,17 +480,17 @@
             this.Shown += new System.EventHandler(this.Form1_Shown);
             this.panel2.ResumeLayout(false);
             this.panel2.PerformLayout();
+            this.tabControl1.ResumeLayout(false);
+            this.tabPage2.ResumeLayout(false);
+            this.tabPage2.PerformLayout();
+            this.panel4.ResumeLayout(false);
+            this.panel4.PerformLayout();
+            this.panel3.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.kryptonPanel1)).EndInit();
             this.kryptonPanel1.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.panel1.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.kryptonCheckSet1)).EndInit();
-            this.panel3.ResumeLayout(false);
-            this.panel4.ResumeLayout(false);
-            this.panel4.PerformLayout();
-            this.tabControl1.ResumeLayout(false);
-            this.tabPage2.ResumeLayout(false);
-            this.tabPage2.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
