@@ -15,8 +15,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-
-
 namespace SerialLCD
 {
     public struct _contur
@@ -39,7 +37,7 @@ namespace SerialLCD
         private Task tSendToSTM32;
 
 
-        const int scale = 10;
+        const int scale = 8;
         const int GREEN = 0x07E0;
 
         const byte NONE = 0;
@@ -53,7 +51,6 @@ namespace SerialLCD
 
 
         public ushort[,] fbMain = new ushort[128, 64];
-
 
         public ushort[,] frameBufferRender = new ushort[128, 64];
 
@@ -79,11 +76,10 @@ namespace SerialLCD
             InitializeComponent();
 
             pictureBox1.Image = newBmp;
-
             pictureBox1.Size = new Size(128 * scale, 64 * scale);
 
             this.Width = 128 * scale;
-            this.Height = 64 * scale + panel2.Height;
+            this.Height = 64 * scale + panel2.Height + 48;
 
             Proceso1 = Task.Run(() => RenderAsync(cts.Token), cts.Token);
             tSendToSTM32 = Task.Run(() => SendToSTM32Async(cts.Token), cts.Token);
@@ -527,6 +523,11 @@ namespace SerialLCD
                 listBox1.Items.Add(port);
             }
             if (listBox1.Items.Count > 0) listBox1.SetSelected(0, true);
+        }
+
+        private void label6_Click(object sender, EventArgs e)
+        {
+
         }
 
         #endregion
