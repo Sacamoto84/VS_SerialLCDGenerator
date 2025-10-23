@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 using SerialLCD.Managers;
 
 namespace SerialLCD
@@ -53,6 +54,14 @@ namespace SerialLCD
             public bool Connect()
             {
                 return _networkManager.Connect();
+            }
+
+            /// <summary>
+            /// Асинхронное подключение к ESP32 с таймаутом
+            /// </summary>
+            public async Task<bool> ConnectAsync()
+            {
+                return await _networkManager.ConnectAsync();
             }
 
             /// <summary>

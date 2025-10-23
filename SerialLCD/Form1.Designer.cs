@@ -71,6 +71,8 @@
             this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
             this.tbIpClient = new System.Windows.Forms.TextBox();
             this.bNetDisconnect = new System.Windows.Forms.Button();
+            this.lNetStatus = new System.Windows.Forms.Label();
+            this.bFill = new System.Windows.Forms.Button();
             this.panel2.SuspendLayout();
             this.tabControl1.SuspendLayout();
             this.tabPage1.SuspendLayout();
@@ -212,6 +214,7 @@
             // 
             // tabPage1
             // 
+            this.tabPage1.Controls.Add(this.lNetStatus);
             this.tabPage1.Controls.Add(this.bNetDisconnect);
             this.tabPage1.Controls.Add(this.tbIpClient);
             this.tabPage1.Controls.Add(this.bNetConnect);
@@ -255,7 +258,7 @@
             this.panel4.Controls.Add(this.edit_windowH);
             this.panel4.Controls.Add(this.bMeasureClear);
             this.panel4.Controls.Add(this.label6);
-            this.panel4.Location = new System.Drawing.Point(1784, 21);
+            this.panel4.Location = new System.Drawing.Point(2111, 16);
             this.panel4.Name = "panel4";
             this.panel4.Size = new System.Drawing.Size(252, 120);
             this.panel4.TabIndex = 53;
@@ -328,19 +331,20 @@
             // 
             // panel3
             // 
+            this.panel3.Controls.Add(this.bFill);
             this.panel3.Controls.Add(this.bClear);
             this.panel3.Controls.Add(this.bLoad);
             this.panel3.Controls.Add(this.bFastSave);
             this.panel3.Controls.Add(this.bSave);
             this.panel3.Controls.Add(this.bFastLoad);
-            this.panel3.Location = new System.Drawing.Point(689, 12);
+            this.panel3.Location = new System.Drawing.Point(694, 14);
             this.panel3.Name = "panel3";
-            this.panel3.Size = new System.Drawing.Size(656, 80);
+            this.panel3.Size = new System.Drawing.Size(838, 80);
             this.panel3.TabIndex = 52;
             // 
             // bClear
             // 
-            this.bClear.Location = new System.Drawing.Point(5, 7);
+            this.bClear.Location = new System.Drawing.Point(176, 7);
             this.bClear.Margin = new System.Windows.Forms.Padding(5, 7, 5, 7);
             this.bClear.Name = "bClear";
             this.bClear.Size = new System.Drawing.Size(120, 64);
@@ -352,7 +356,7 @@
             // bLoad
             // 
             this.bLoad.Font = new System.Drawing.Font("Consolas", 8.1F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.bLoad.Location = new System.Drawing.Point(135, 7);
+            this.bLoad.Location = new System.Drawing.Point(306, 7);
             this.bLoad.Margin = new System.Windows.Forms.Padding(5);
             this.bLoad.Name = "bLoad";
             this.bLoad.Size = new System.Drawing.Size(120, 64);
@@ -364,7 +368,7 @@
             // bFastSave
             // 
             this.bFastSave.Font = new System.Drawing.Font("Consolas", 8.1F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.bFastSave.Location = new System.Drawing.Point(525, 7);
+            this.bFastSave.Location = new System.Drawing.Point(696, 7);
             this.bFastSave.Margin = new System.Windows.Forms.Padding(5);
             this.bFastSave.Name = "bFastSave";
             this.bFastSave.Size = new System.Drawing.Size(120, 64);
@@ -376,7 +380,7 @@
             // bSave
             // 
             this.bSave.Font = new System.Drawing.Font("Consolas", 8.1F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.bSave.Location = new System.Drawing.Point(265, 7);
+            this.bSave.Location = new System.Drawing.Point(436, 7);
             this.bSave.Margin = new System.Windows.Forms.Padding(5);
             this.bSave.Name = "bSave";
             this.bSave.Size = new System.Drawing.Size(120, 64);
@@ -388,7 +392,7 @@
             // bFastLoad
             // 
             this.bFastLoad.Font = new System.Drawing.Font("Consolas", 8.1F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.bFastLoad.Location = new System.Drawing.Point(395, 7);
+            this.bFastLoad.Location = new System.Drawing.Point(566, 7);
             this.bFastLoad.Margin = new System.Windows.Forms.Padding(5);
             this.bFastLoad.Name = "bFastLoad";
             this.bFastLoad.Size = new System.Drawing.Size(120, 64);
@@ -422,7 +426,7 @@
             this.kryptonPanel1.Controls.Add(this.bMassiv);
             this.kryptonPanel1.Controls.Add(this.listBox2);
             this.kryptonPanel1.Controls.Add(this.cbVidelenie);
-            this.kryptonPanel1.Location = new System.Drawing.Point(1353, 12);
+            this.kryptonPanel1.Location = new System.Drawing.Point(1680, 7);
             this.kryptonPanel1.Margin = new System.Windows.Forms.Padding(5, 7, 5, 7);
             this.kryptonPanel1.Name = "kryptonPanel1";
             this.kryptonPanel1.Size = new System.Drawing.Size(378, 170);
@@ -524,6 +528,25 @@
             this.bNetDisconnect.UseVisualStyleBackColor = true;
             this.bNetDisconnect.Click += new System.EventHandler(this.bNetDisconnect_Click_1);
             // 
+            // lNetStatus
+            // 
+            this.lNetStatus.AutoSize = true;
+            this.lNetStatus.Location = new System.Drawing.Point(264, 17);
+            this.lNetStatus.Name = "lNetStatus";
+            this.lNetStatus.Size = new System.Drawing.Size(92, 32);
+            this.lNetStatus.TabIndex = 3;
+            this.lNetStatus.Text = "label7";
+            // 
+            // bFill
+            // 
+            this.bFill.Location = new System.Drawing.Point(28, 6);
+            this.bFill.Name = "bFill";
+            this.bFill.Size = new System.Drawing.Size(132, 73);
+            this.bFill.TabIndex = 50;
+            this.bFill.Text = "Fill";
+            this.bFill.UseVisualStyleBackColor = true;
+            this.bFill.Click += new System.EventHandler(this.bFill_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(16F, 31F);
@@ -602,6 +625,8 @@
         private System.Windows.Forms.Button bNetConnect;
         private System.Windows.Forms.TextBox tbIpClient;
         private System.Windows.Forms.Button bNetDisconnect;
+        private System.Windows.Forms.Label lNetStatus;
+        private System.Windows.Forms.Button bFill;
     }
 }
 

@@ -147,6 +147,24 @@ namespace SerialLCD
             }
         }
 
+        /// <summary>
+        /// Обновление статуса подключения
+        /// </summary>
+        private void UpdateConnectionStatus(string status)
+        {
+            if (lNetStatus != null && !lNetStatus.IsDisposed)
+            {
+                if (lNetStatus.InvokeRequired)
+                {
+                    lNetStatus.Invoke(new Action(() => lNetStatus.Text = status));
+                }
+                else
+                {
+                    lNetStatus.Text = status;
+                }
+            }
+        }
+
 
 
 
@@ -210,6 +228,9 @@ namespace SerialLCD
             
             // Загружаем сохраненный IP-адрес
             LoadIPAddress();
+            
+            // Устанавливаем начальный статус
+            UpdateConnectionStatus("Отключено");
         }
         private async void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
@@ -703,7 +724,7 @@ namespace SerialLCD
         #region Потоки отрисовки и отсылки
         byte[] serial_transmit_buffer = new byte[1024];
 
-        private void bNetConnect_Click(object sender, EventArgs e)
+        private async void bNetConnect_Click(object sender, EventArgs e)
         {
             string ip = tbIpClient.Text.Trim();
             
@@ -714,22 +735,45 @@ namespace SerialLCD
                 return;
             }
             
-            // Сохраняем IP-адрес в настройки
-            SaveIPAddress(ip);
+            // Блокируем кнопки во время подключения
+            bNetConnect.Enabled = false;
+            bNetConnect.Text = "Подключение...";
+            UpdateConnectionStatus("Подключение...");
             
-            // Настраиваем и подключаемся
-            senderNet.Configure(ip, 81);
-            if (senderNet.Connect())
+            try
             {
-                _autoReconnectEnabled = true; // Включаем автоматическое переподключение
-                //MessageBox.Show($"Успешно подключено к {ip}:81\nАвтоматическое переподключение включено", "Подключение", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                bNetDisconnect.Enabled = true;
-                bNetConnect.Enabled = false;
+                // Сохраняем IP-адрес в настройки
+                SaveIPAddress(ip);
+                
+                // Настраиваем и подключаемся асинхронно
+                senderNet.Configure(ip, 81);
+                bool connected = await senderNet.ConnectAsync();
+                
+                if (connected)
+                {
+                    _autoReconnectEnabled = true; // Включаем автоматическое переподключение
+                    bNetDisconnect.Enabled = true;
+                    bNetConnect.Text = "Подключено";
+                    UpdateConnectionStatus("Подключено");
+                    // Можно показать уведомление в статусной строке или логе
+                    Console.WriteLine($"Успешно подключено к {ip}:81");
+                }
+                else
+                {
+                    _autoReconnectEnabled = false; // Отключаем при неудаче
+                    bNetConnect.Enabled = true;
+                    bNetConnect.Text = "Подключить";
+                    UpdateConnectionStatus("Ошибка подключения");
+                    MessageBox.Show($"Не удалось подключиться к {ip}:81\nПроверьте IP-адрес и доступность устройства", "Ошибка подключения", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                _autoReconnectEnabled = false; // Отключаем при неудаче
-                MessageBox.Show($"Не удалось подключиться к {ip}:81", "Ошибка подключения", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                _autoReconnectEnabled = false;
+                bNetConnect.Enabled = true;
+                bNetConnect.Text = "Подключить";
+                UpdateConnectionStatus("Ошибка");
+                MessageBox.Show($"Ошибка при подключении: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -738,8 +782,22 @@ namespace SerialLCD
             _autoReconnectEnabled = false; // Отключаем автоматическое переподключение
             senderNet.Disconnect();
             bNetConnect.Enabled = true;
+            bNetConnect.Text = "Подключить";
             bNetDisconnect.Enabled = false;
-            //MessageBox.Show("Отключено от ESP32\nАвтоматическое переподключение отключено", "Отключение", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            UpdateConnectionStatus("Отключено");
+            Console.WriteLine("Отключено от ESP32 - автоматическое переподключение отключено");
+        }
+
+        private void bFill_Click(object sender, EventArgs e)
+        {
+            // Заполнение массива
+            for (int i = 0; i < fbMain.GetLength(0); i++)
+            {
+                for (int j = 0; j < fbMain.GetLength(1); j++)
+                {
+                    fbMain[i, j] = 0xFFFF;
+                }
+            }
         }
 
         private async Task RenderAsync(CancellationToken token)
@@ -923,10 +981,12 @@ namespace SerialLCD
                                     senderNet.Configure(savedIP, 81);
                                     if (senderNet.Connect())
                                     {
+                                        UpdateConnectionStatus("Подключено");
                                         Console.WriteLine($"Автоматически переподключились к {savedIP}:81");
                                     }
                                     else
                                     {
+                                        UpdateConnectionStatus("Попытка переподключения...");
                                         Console.WriteLine("Не удалось автоматически переподключиться");
                                         await Task.Delay(2000, token);
                                         continue;

@@ -1,5 +1,7 @@
 using System;
 using System.Net.Sockets;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SerialLCD.Managers
 {
@@ -51,7 +53,7 @@ namespace SerialLCD.Managers
         }
 
         /// <summary>
-        /// Подключение к устройству
+        /// Подключение к устройству с таймаутом
         /// </summary>
         public bool Connect()
         {
@@ -67,17 +69,33 @@ namespace SerialLCD.Managers
                 _client.ReceiveTimeout = 5000;
                 _client.SendTimeout = 5000;
                 
-                _client.Connect(_ipAddress, _port);
-                _stream = _client.GetStream();
-                _isConnected = true;
+                // Используем асинхронное подключение с таймаутом
+                var connectTask = _client.ConnectAsync(_ipAddress, _port);
+                if (connectTask.Wait(5000)) // Таймаут 5 секунд
+                {
+                    if (_client.Connected)
+                    {
+                        _stream = _client.GetStream();
+                        _isConnected = true;
+                        Console.WriteLine($"Подключено к устройству на {_ipAddress}:{_port}");
+                        return true;
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"Таймаут подключения к {_ipAddress}:{_port}");
+                    _client?.Close();
+                    _client = null;
+                }
                 
-                Console.WriteLine($"Подключено к устройству на {_ipAddress}:{_port}");
-                return true;
+                return false;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Ошибка подключения: {ex.Message}");
                 _isConnected = false;
+                _client?.Close();
+                _client = null;
                 return false;
             }
         }
@@ -134,6 +152,55 @@ namespace SerialLCD.Managers
                 Console.WriteLine($"Ошибка при отправке данных: {ex.Message}");
                 // При ошибке отправки помечаем соединение как разорванное
                 _isConnected = false;
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Асинхронное подключение с таймаутом
+        /// </summary>
+        public async Task<bool> ConnectAsync()
+        {
+            try
+            {
+                if (_isConnected)
+                {
+                    Disconnect();
+                }
+
+                _client = new TcpClient();
+                _client.ReceiveTimeout = 5000;
+                _client.SendTimeout = 5000;
+                
+                // Асинхронное подключение с таймаутом
+                using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5)))
+                {
+                    try
+                    {
+                        await _client.ConnectAsync(_ipAddress, _port).ConfigureAwait(false);
+                        
+                        if (_client.Connected)
+                        {
+                            _stream = _client.GetStream();
+                            _isConnected = true;
+                            Console.WriteLine($"Подключено к устройству на {_ipAddress}:{_port}");
+                            return true;
+                        }
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        Console.WriteLine($"Таймаут подключения к {_ipAddress}:{_port}");
+                    }
+                }
+                
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка подключения: {ex.Message}");
+                _isConnected = false;
+                _client?.Close();
+                _client = null;
                 return false;
             }
         }
