@@ -66,6 +66,9 @@ namespace SerialLCD
         Thread Proceso1;
         Thread tSendToSTM32;
 
+        private CancellationTokenSource cts = new CancellationTokenSource();
+
+
         #region Не менять
         public Form1()
         {
@@ -80,11 +83,14 @@ namespace SerialLCD
 
 
 
-            Proceso1 = new Thread(new ThreadStart(Render));
+            // Start threads with cancellation token
+            Proceso1 = new Thread(() => Render(cts.Token));
             Proceso1.Priority = ThreadPriority.Highest;
+            Proceso1.IsBackground = true; // Mark as background thread
             Proceso1.Start();
 
-            tSendToSTM32 = new Thread(new ThreadStart(SendToSTM32));
+            tSendToSTM32 = new Thread(() => SendToSTM32(cts.Token));
+            tSendToSTM32.IsBackground = true; // Mark as background thread
             tSendToSTM32.Start();
         }
         private void Form1_Shown(object sender, EventArgs e)
@@ -105,14 +111,39 @@ namespace SerialLCD
         }
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
-            serialPort1.Close();
+            {
+                // Signal threads to stop
+                cts.Cancel();
 
-            //Proceso1.Suspend();
-            //Proceso1.Abort();
+                // Close serial port
+                if (serialPort1.IsOpen)
+                {
+                    try
+                    {
+                        serialPort1.Close();
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Ошибка при закрытии порта: {ex.Message}");
+                    }
+                }
 
-            // Ожидание прерывания
-            //Proceso1.Join();
+                // Wait for threads to terminate (optional, since they are background threads)
+                try
+                {
+                    Proceso1.Join(1000); // Wait up to 1 second
+                    tSendToSTM32.Join(1000);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Ошибка при завершении потоков: {ex.Message}");
+                }
+
+                // Dispose of CancellationTokenSource
+                cts.Dispose();
+            }
         }
+
         private void OPEN_Click(object sender, EventArgs e)
         {
             if (listBox1.Items.Count == 0) return; //Количество елементов в списке
@@ -640,7 +671,7 @@ namespace SerialLCD
 
 
 
-        public void Render()
+        public void Render(CancellationToken token)
         {
             int i = 0;
             Bitmap newBmpLocal = new Bitmap(128 * scale, 64 * scale);
@@ -648,7 +679,7 @@ namespace SerialLCD
             Graphics graphicsTarget = Graphics.FromImage(newBmp); // Graphics для глобального Bitmap
             Stopwatch stopwatch = new Stopwatch(); // Для измерения времени
 
-            while (true)
+            while (!token.IsCancellationRequested)
             {
                 stopwatch.Start(); // Начало измерения времени
 
@@ -660,6 +691,7 @@ namespace SerialLCD
                 for (x = 0; x < LCD_W; x++) fbMeasure[x, window_H] = 0xF81F;
                 for (y = 0; y < LCD_H; y++) fbMeasure[window_W, y] = 0xF81F;
                 for (x = 0; x < LCD_W; x++)
+
                     for (y = 0; y < LCD_H; y++)
                     {
                         frameBufferRender[x, y] = fbMain[x, y];
@@ -740,27 +772,45 @@ namespace SerialLCD
 
                 Thread.Sleep(16); // ~60 FPS
             }
+
+            // Clean up resources
+            graphics.Dispose();
+            graphicsTarget.Dispose();
+            newBmpLocal.Dispose();
         }
 
 
-        public void SendToSTM32()
+        public void SendToSTM32(CancellationToken token)
         {
-            while (true)
+            while (!token.IsCancellationRequested)
             {
-                for (int x1 = 0; x1 < 128; x1++)
-                    for (int y1 = 0; y1 < 64; y1++)
-                    {
-                        if (fbMain[x1, y1] == 0)
-                            serial_transmit_buffer[x1 + (y1 / 8) * 128] &= (byte)(~(1 << (y1 % 8)));
-                        else
-                            serial_transmit_buffer[x1 + (y1 / 8) * 128] |= (byte)(1 << (y1 % 8));
-                    }
+                try
+                {
+                    for (int x1 = 0; x1 < 128; x1++)
+                        for (int y1 = 0; y1 < 64; y1++)
+                        {
+                            if (fbMain[x1, y1] == 0)
+                                serial_transmit_buffer[x1 + (y1 / 8) * 128] &= (byte)(~(1 << (y1 % 8)));
+                            else
+                                serial_transmit_buffer[x1 + (y1 / 8) * 128] |= (byte)(1 << (y1 % 8));
+                        }
 
-                if (serialPort1.IsOpen)
-                    serialPort1.Write(serial_transmit_buffer, 0, 1024);
+                    if (serialPort1.IsOpen)
+                        serialPort1.Write(serial_transmit_buffer, 0, 1024);
+                }
+                catch (Exception ex)
+                {
+                    // Log or handle the exception (e.g., port closed or disconnected)
+                    if (!token.IsCancellationRequested)
+                    {
+                        this.Invoke((MethodInvoker)delegate
+                        {
+                            MessageBox.Show($"Ошибка при отправке данных: {ex.Message}");
+                        });
+                    }
+                }
 
                 Thread.Sleep(100);
-
             }
         }
         #endregion
