@@ -130,7 +130,7 @@
             // 
             // bUndoClear
             // 
-            this.bUndoClear.Location = new System.Drawing.Point(1043, 112);
+            this.bUndoClear.Location = new System.Drawing.Point(1042, 106);
             this.bUndoClear.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.bUndoClear.Name = "bUndoClear";
             this.bUndoClear.Size = new System.Drawing.Size(112, 55);
@@ -152,10 +152,10 @@
             // 
             // bUndo
             // 
-            this.bUndo.Location = new System.Drawing.Point(1160, 107);
+            this.bUndo.Location = new System.Drawing.Point(1160, 106);
             this.bUndo.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.bUndo.Name = "bUndo";
-            this.bUndo.Size = new System.Drawing.Size(184, 57);
+            this.bUndo.Size = new System.Drawing.Size(184, 55);
             this.bUndo.TabIndex = 56;
             this.bUndo.Text = "Undo: 0";
             this.bUndo.UseVisualStyleBackColor = true;
@@ -391,7 +391,7 @@
             // 
             // cbVLine
             // 
-            this.cbVLine.Location = new System.Drawing.Point(531, 100);
+            this.cbVLine.Location = new System.Drawing.Point(531, 97);
             this.cbVLine.Margin = new System.Windows.Forms.Padding(5, 7, 5, 7);
             this.cbVLine.Name = "cbVLine";
             this.cbVLine.Size = new System.Drawing.Size(120, 64);
@@ -445,7 +445,7 @@
             this.Margin = new System.Windows.Forms.Padding(5);
             this.Name = "Form1";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "Serial OLED V12 23.10.20.25";
+            this.Text = "Serial OLED V15 25.10.20.25";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
             this.panel2.ResumeLayout(false);
             this.panel2.PerformLayout();
