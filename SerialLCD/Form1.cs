@@ -32,14 +32,14 @@ namespace SerialLCD
         public byte state;
     }
 
+
+
+
     public partial class Form1 : Form
     {
 
-        private Task Proceso1;
-        private Task tSendToSTM32;
-        private Task tSendToESP32;
-        private Task tSendToESP32Udp;
-
+        private readonly Task Proceso1;
+        private readonly Task _tSendToESP32Udp;
 
         const int scale = 8;
         const int GREEN = 0x07E0;
@@ -49,14 +49,14 @@ namespace SerialLCD
         const byte HLINE = 2;
         byte ModeLine;
 
-        public ushort[,] frameBufferLayer_Contur = new ushort[128, 64];
-        public ushort[,] frameBufferLayer_Mouse_Cursor = new ushort[128, 64];
-        public ushort[,] fbMeasure = new ushort[128, 64]; //Рамка
+        ushort[,] frameBufferLayer_Contur = new ushort[128, 64];
+        ushort[,] frameBufferLayer_Mouse_Cursor = new ushort[128, 64];
+        ushort[,] fbMeasure = new ushort[128, 64]; //Рамка
 
 
         public ushort[,] fbMain = new ushort[128, 64];
 
-        public ushort[,] frameBufferRender = new ushort[128, 64];
+        
 
         private LifoBuffer lifoBuffer = new LifoBuffer(128, 64); // Новый буфер
 
@@ -75,11 +75,9 @@ namespace SerialLCD
 
         private CancellationTokenSource cts = new CancellationTokenSource();
 
-        private bool isUDPSelect = true;
-
         private DateTime _lastConnectionCheck = DateTime.MinValue; // Время последней проверки соединения
-        
-   
+
+
         /// <summary>
         /// Валидация IP-адреса
         /// </summary>
@@ -155,14 +153,14 @@ namespace SerialLCD
             }
         }
 
-        void lifoPush()
+        void LifoPush()
         {
             lifoBuffer.Push(fbMain);
             int capacity = lifoBuffer.Count;
             bUndo.Text = "Undo: " + capacity;
         }
 
-        void lifoPop()
+        void LifoPop()
         {
             ushort[,] temp = new ushort[128, 64];
             bool res = lifoBuffer.Pop(temp);
@@ -174,7 +172,7 @@ namespace SerialLCD
             bUndo.Text = "Undo: " + capacity;
         }
 
-        void lifoClear()
+        void LifoClear()
         {
             lifoBuffer.Clear();
             int capacity = lifoBuffer.Count;
@@ -190,50 +188,25 @@ namespace SerialLCD
             pictureBox1.Image = newBmp;
             pictureBox1.Size = new Size(128 * scale, 64 * scale);
 
-            this.Width = 128 * scale;
+            this.Width = 128 * scale + 16;
             this.Height = 64 * scale + panel2.Height + 48;
 
             Proceso1 = Task.Run(() => RenderAsync(cts.Token), cts.Token);
-            tSendToSTM32 = Task.Run(() => SendToSTM32Async(cts.Token), cts.Token);
-            tSendToESP32Udp = Task.Run(() => SendToESP32UdpAsync(cts.Token), cts.Token); ;
+            _tSendToESP32Udp = Task.Run(() => SendToESP32UdpAsync(cts.Token), cts.Token); ;
 
-        contur = new _contur { x1 = 0, y1 = 0, x2 = 1, y2 = 1, w = 1, h = 1, enable = false, visible = false, state = 0 };
+            contur = new _contur { x1 = 0, y1 = 0, x2 = 1, y2 = 1, w = 1, h = 1, enable = false, visible = false, state = 0 };
 
-        }
-        private void Form1_Shown(object sender, EventArgs e)
-        {
-            // Получить список COM портов 
-            string[] ports = SerialPort.GetPortNames();
-
-            foreach (string port in ports)
-            {
-                listBox1.Items.Add(port);
-            }
-
-            if (listBox1.Items.Count > 0) listBox1.SetSelected(0, true);
-            
-            // Загружаем сохраненный IP-адрес
             LoadIPAddress();
-   
+
         }
+
         private async void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
-
             cts.Cancel();
-            if (serialPort1.IsOpen)
-            {
-                try
-                {
-                    serialPort1.Close();
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Ошибка при закрытии порта: {ex.Message}");
-                }
-            }
+
             try
             {
-                await Task.WhenAll(Proceso1, tSendToSTM32);
+                await Task.WhenAll(Proceso1, _tSendToESP32Udp);
             }
             catch (Exception ex)
             {
@@ -244,35 +217,8 @@ namespace SerialLCD
             newBmpMini.Dispose();
         }
 
-        private void OPEN_Click(object sender, EventArgs e)
-        {
-            if (listBox1.Items.Count == 0) return; //Количество елементов в списке
-            serialPort1.PortName = listBox1.SelectedItem.ToString();
 
-            serialPort1.Open();
-            OPEN.Enabled = false;
-            CLOSE.Enabled = true;
 
-            bool _opened;
-            _opened = serialPort1.IsOpen;
-            if (_opened)
-                label2.Text = "Открыт";
-            else
-                label2.Text = "Закрыт";
-        }
-        private void CLOSE_Click(object sender, EventArgs e)
-        {
-            serialPort1.Close();
-            OPEN.Enabled = true;
-            CLOSE.Enabled = false;
-
-            bool _opened;
-            _opened = serialPort1.IsOpen;
-            if (_opened)
-                label2.Text = "Открыт";
-            else
-                label2.Text = "Закрыт";
-        }
         #endregion
 
         #region Утилиты setArray
@@ -307,7 +253,7 @@ namespace SerialLCD
         #endregion
 
 
-        private void cbVidelenie_Click(object sender, EventArgs e)
+        private void CbVidelenie_Click(object sender, EventArgs e)
         {
             if (cbVidelenie.Checked)
             {
@@ -414,7 +360,7 @@ namespace SerialLCD
             if ((ModeLine == VLINE) || (ModeLine == HLINE))
                 return;
 
-                if (e.Button == MouseButtons.Left)
+            if (e.Button == MouseButtons.Left)
             {
                 fbMain[mouse_x, mouse_y] = 0xFFFF;
             }
@@ -424,7 +370,7 @@ namespace SerialLCD
                 fbMain[mouse_x, mouse_y] = 0x0000;
             }
 
-        
+
             //if (e.Button == MouseButtons.Left || e.Button == MouseButtons.Right || ModeLine != NONE)
             //    fbMainChanged = true; // Отмечаем изменение при рисовании линий или пикселей
 
@@ -496,31 +442,31 @@ namespace SerialLCD
 
                 if (ModeLine == VLINE)
                 {
-                if (e.Button == MouseButtons.Left)
-                {
-                    lifoPush();
-                    LineV(fbMain, (short)mouse_x, 0, 64, 0xFFFF);
-                    return;
-                }
-                if (e.Button == MouseButtons.Right)
-                {
-                    lifoPush();
-                    LineV(fbMain, (short)mouse_x, 0, 64, 0);
-                    return;
-                }
+                    if (e.Button == MouseButtons.Left)
+                    {
+                        LifoPush();
+                        LineV(fbMain, (short)mouse_x, 0, 64, 0xFFFF);
+                        return;
+                    }
+                    if (e.Button == MouseButtons.Right)
+                    {
+                        LifoPush();
+                        LineV(fbMain, (short)mouse_x, 0, 64, 0);
+                        return;
+                    }
                 }
 
                 if (ModeLine == HLINE)
                 {
                     if (e.Button == MouseButtons.Left)
                     {
-                        lifoPush();
+                        LifoPush();
                         LineH(fbMain, (short)mouse_y, 0, 128, 0xFFFF);
                         return;
                     }
                     if (e.Button == MouseButtons.Right)
                     {
-                        lifoPush();
+                        LifoPush();
                         LineH(fbMain, (short)mouse_y, 0, 128, 0);
                         return;
                     }
@@ -528,25 +474,25 @@ namespace SerialLCD
 
                 if (e.Button == MouseButtons.Left)
                 {
-                    lifoPush();
+                    LifoPush();
                     fbMain[mouse_x, mouse_y] = 0xFFFF;
                     return;
                 }
 
                 if (e.Button == MouseButtons.Right)
                 {
-                    lifoPush();
+                    LifoPush();
                     fbMain[mouse_x, mouse_y] = 0;
                     return;
                 }
 
                 if (e.Button == MouseButtons.Middle)
                 {
-                    lifoPop();
+                    LifoPop();
                     return;
                 }
 
-              
+
             }
         }
         #endregion
@@ -570,9 +516,6 @@ namespace SerialLCD
                     writer.Write(serial_transmit_buffer, 0, 1024);
                 }
             }
-
-
-
         }
 
         private void bFastSave_Click(object sender, EventArgs e)
@@ -586,7 +529,7 @@ namespace SerialLCD
 
         private void bFastLoad_Click(object sender, EventArgs e)
         {
-            lifoPush();
+            LifoPush();
 
             string path = @"fast.dat";
 
@@ -615,7 +558,6 @@ namespace SerialLCD
                             {
                                 fbMain[x, y] = 0;
                             }
-
                         }
                     }
                 }
@@ -624,7 +566,7 @@ namespace SerialLCD
 
         private void bLoad_Click(object sender, EventArgs e)
         {
-            lifoPush();
+            LifoPush();
 
             var fileContent = string.Empty;
             var filePath = string.Empty;
@@ -672,27 +614,18 @@ namespace SerialLCD
             }
         }
 
-        private void listBox1_MouseDown(object sender, MouseEventArgs e)
-        {
-            listBox1.Items.Clear();
-            string[] ports = SerialPort.GetPortNames();
-            foreach (string port in ports)
-            {
-                listBox1.Items.Add(port);
-            }
-            if (listBox1.Items.Count > 0) listBox1.SetSelected(0, true);
-        }
+
 
         private void bUndo_Click(object sender, EventArgs e)
         {
-            lifoPop();
+            LifoPop();
             int capacity = lifoBuffer.Count;
-            bUndo.Text = "Undo: "+capacity;
+            bUndo.Text = "Undo: " + capacity;
         }
 
         private void bUndoClear_Click(object sender, EventArgs e)
         {
-            lifoClear();
+            LifoClear();
         }
 
         #endregion
@@ -721,6 +654,11 @@ namespace SerialLCD
             Console.Beep(); // Воспроизводит звуковой сигнал
         }
 
+        private void panel2_Paint(object sender, PaintEventArgs e)
+        {
+
+        }
+
         private async Task RenderAsync(CancellationToken token)
         {
             int i = 0;
@@ -729,14 +667,18 @@ namespace SerialLCD
             SolidBrush brush = new SolidBrush(Color.Black);
             Stopwatch stopwatch = new Stopwatch();
 
+            ushort[,] frameBufferRender = new ushort[128, 64];
+
+            ushort pix;
+            ushort x, y;
+
             try
             {
                 while (!token.IsCancellationRequested)
                 {
                     stopwatch.Start();
                     i++;
-                    ushort x, y;
-                    ushort pix;
+
                     for (x = 0; x < LCD_W; x++) fbMeasure[x, window_H] = 0xF81F;
                     for (y = 0; y < LCD_H; y++) fbMeasure[window_W, y] = 0xF81F;
                     for (x = 0; x < LCD_W; x++)
@@ -802,16 +744,13 @@ namespace SerialLCD
                         MessageBox.Show($"Ошибка при копировании изображения: {ex.Message}");
                         break;
                     }
-                    stopwatch.Stop();
-                    long renderTimeMs = stopwatch.ElapsedMilliseconds;
-                    stopwatch.Reset();
+                   
                     if (!IsDisposed && IsHandleCreated)
                     {
                         try
                         {
                             Invoke((MethodInvoker)delegate
                             {
-                                label1.Text = $"{i},{renderTimeMs}ms";
                                 pictureBox1?.Refresh();
                             });
                         }
@@ -821,6 +760,9 @@ namespace SerialLCD
                             break;
                         }
                     }
+                    stopwatch.Stop();
+                    long renderTimeMs = stopwatch.ElapsedMilliseconds;
+                    stopwatch.Reset();
                     long delay = 16 - renderTimeMs;
                     if (delay < 0) delay = 1;
                     await Task.Delay((int)delay, token);
@@ -834,50 +776,9 @@ namespace SerialLCD
             }
         }
 
- 
-        private async Task SendToSTM32Async(CancellationToken token)
-        {
-            while (!token.IsCancellationRequested)
-            {
-                try
-                {
-
-                    if (!serialPort1.IsOpen)
-                    {
-                        await Task.Delay(1000, token);
-                        continue;
-                    }
-
-                    for (int x1 = 0; x1 < 128; x1++)
-                        for (int y1 = 0; y1 < 64; y1++)
-                        {
-                            if (fbMain[x1, y1] == 0)
-                                serial_transmit_buffer[x1 + (y1 / 8) * 128] &= (byte)(~(1 << (y1 % 8)));
-                            else
-                                serial_transmit_buffer[x1 + (y1 / 8) * 128] |= (byte)(1 << (y1 % 8));
-                        }
-                    if (serialPort1.IsOpen)
-                        serialPort1.Write(serial_transmit_buffer, 0, 1024);
-
-                }
-                catch (Exception ex)
-                {
-                    if (!token.IsCancellationRequested)
-                    {
-                        Invoke((MethodInvoker)delegate
-                        {
-                            MessageBox.Show($"Ошибка при отправке данных: {ex.Message}");
-                        });
-                        await Task.Delay(1000, token);
-                    }
-                }
-                await Task.Delay(100, token);
-            }
-        }
-
         private async Task SendToESP32UdpAsync(CancellationToken token)
         {
-          
+
             UdpClient udpClient = new UdpClient();
 
             while (!token.IsCancellationRequested)
@@ -886,11 +787,6 @@ namespace SerialLCD
                 try
                 {
 
-                    if (!isUDPSelect)
-                    {
-                        await Task.Delay(500, token);
-                        continue;
-                    }
                     // Подготавливаем данные для отправки
                     for (int x1 = 0; x1 < 128; x1++)
                         for (int y1 = 0; y1 < 64; y1++)
@@ -931,152 +827,6 @@ namespace SerialLCD
 
             udpClient.Dispose();
         }
-
-        //private async Task SendToESP32Async(CancellationToken token)
-        //{
-        //    byte[] lastSentBuffer = new byte[1024]; // Буфер для сравнения
-        //    bool hasChanges = false;
-        //    int consecutiveNoChanges = 0; // Счетчик последовательных циклов без изменений
-        //    bool forceSend = false; // Флаг принудительной отправки
-            
-        //    while (!token.IsCancellationRequested)
-        //    {
-        //        try
-        //        {
-        //            // Проверяем и обновляем статус соединения
-        //            CheckAndUpdateConnectionStatus();
-        //            // Если нет соединения, проверяем режим работы
-        //            if (!senderNet.IsConnected)
-        //            {
-        //                if (_autoReconnectEnabled)
-        //                {
-        //                    // Автоматическое переподключение включено - пытаемся переподключиться
-        //                    UpdateConnectionStatus("Переподключение...");
-        //                    Console.WriteLine("Соединение разорвано, пытаемся переподключиться автоматически...");
-        //                    if (!senderNet.IsConnected) // Дополнительная проверка
-        //                    {
-        //                        // Получаем сохраненный IP из настроек
-        //                        string savedIP = Properties.Settings.Default.LastIPAddress;
-        //                        if (!string.IsNullOrEmpty(savedIP) && IsValidIPAddress(savedIP))
-        //                        {
-        //                            senderNet.Configure(savedIP, 81);
-        //                            if (senderNet.Connect())
-        //                            {
-        //                                UpdateConnectionStatus("Подключено");
-        //                                Console.WriteLine($"Автоматически переподключились к {savedIP}:81");
-        //                            }
-        //                            else
-        //                            {
-        //                                UpdateConnectionStatus("Готов к передаче");
-        //                                Console.WriteLine("Не удалось автоматически переподключиться");
-        //                                await Task.Delay(2000, token);
-        //                                continue;
-        //                            }
-        //                        }
-        //                        else
-        //                        {
-        //                            UpdateConnectionStatus("Готов к передаче");
-        //                            Console.WriteLine("Нет сохраненного IP-адреса для автоматического переподключения");
-        //                            await Task.Delay(2000, token);
-        //                            continue;
-        //                        }
-        //                    }
-        //                }
-        //                else
-        //                {
-        //                    // Автоматическое переподключение отключено - ждем подключения пользователем
-        //                    await Task.Delay(2000, token);
-        //                    continue;
-        //                }
-        //            }
-
-        //            // Подготавливаем данные для отправки
-        //            for (int x1 = 0; x1 < 128; x1++)
-        //                for (int y1 = 0; y1 < 64; y1++)
-        //                {
-        //                    if (fbMain[x1, y1] == 0)
-        //                        serial_transmit_buffer[x1 + (y1 / 8) * 128] &= (byte)(~(1 << (y1 % 8)));
-        //                    else
-        //                        serial_transmit_buffer[x1 + (y1 / 8) * 128] |= (byte)(1 << (y1 % 8));
-        //                }
-
-        //            // Проверяем, изменились ли данные (оптимизированное сравнение)
-        //            hasChanges = false;
-        //            // Используем unsafe код для быстрого сравнения
-        //            unsafe
-        //            {
-        //                fixed (byte* ptr1 = serial_transmit_buffer, ptr2 = lastSentBuffer)
-        //                {
-        //                    for (int i = 0; i < 1024; i++)
-        //                    {
-        //                        if (ptr1[i] != ptr2[i])
-        //                        {
-        //                            hasChanges = true;
-        //                            break;
-        //                        }
-        //                    }
-        //                }
-        //            }
-
-        //            // Проверяем флаг принудительной отправки
-        //            if (_forceSendFlag)
-        //            {
-        //                forceSend = true;
-        //                _forceSendFlag = false;
-        //            }
-                    
-        //            // Отправляем данные при изменении или принудительно
-        //            if (hasChanges || forceSend)
-        //            {
-        //                consecutiveNoChanges = 0; // Сбрасываем счетчик при изменениях
-        //                forceSend = false; // Сбрасываем флаг принудительной отправки
-                        
-        //                bool success = senderNet.SendByteArray(serial_transmit_buffer);
-        //                if (success)
-        //                {
-        //                    // Копируем отправленные данные для сравнения
-        //                    Array.Copy(serial_transmit_buffer, lastSentBuffer, 1024);
-        //                }
-        //                else
-        //                {
-        //                    // Не показываем ошибку сразу - это может быть нормальное поведение ESP32
-        //                    Console.WriteLine("Не удалось отправить данные, соединение разорвано");
-        //                    await Task.Delay(100, token); // Еще больше уменьшаем задержку при ошибке
-        //                }
-        //            }
-        //            else
-        //            {
-        //                consecutiveNoChanges++;
-        //            }
-
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            if (!token.IsCancellationRequested)
-        //            {
-        //                // Не показываем ошибку соединения - это может быть нормальное поведение
-        //                Console.WriteLine($"Ошибка в SendToESP32Async: {ex.Message}");
-        //                await Task.Delay(500, token); // Уменьшаем задержку при ошибке
-        //            }
-        //        }
-                
-        //        // Адаптивная задержка: еще быстрее при изменениях
-        //        int delay = hasChanges ? 20 : Math.Min(50 + consecutiveNoChanges * 5, 200);
-        //        await Task.Delay(delay, token);
-        //    }
-        //}
-
-
-
-
-
-
-
-
-
-
-
-
 
         #endregion
 
